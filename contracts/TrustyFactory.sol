@@ -5,7 +5,7 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import './Trusty.sol';
 
-import "hardhat/console.sol";
+//import "hardhat/console.sol";
 
 contract TrustyFactory is Ownable {
     // indexed
