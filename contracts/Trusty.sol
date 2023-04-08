@@ -218,7 +218,7 @@ contract Trusty {
 
         require(
             transaction.numConfirmations >= numConfirmationsRequired,
-            "cannot execute tx"
+            "cannot execute tx due to number of confirmation required"
         );
 
         transaction.executed = true;

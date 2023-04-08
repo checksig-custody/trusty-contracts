@@ -64,11 +64,11 @@ const main = async () => {
 
     let txGet2;
     txGet2 = await Contract.getTx(0,0);
-    console.log("get TXs:", txGet2);
+    console.log("get TX2s:", txGet2);
 
     let txExe = await Contract.connect(owner).trustyExecute(0,0);
     await txExe.wait();
-    console.log("Executed TX:", txExe);
+    console.log("Executed TX:", txExe.hash);
 
     let receiver = await hre.ethers.provider.getBalance(other.address);
     console.log("receiver balance:",receiver);
