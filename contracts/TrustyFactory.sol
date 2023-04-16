@@ -130,6 +130,12 @@ contract TrustyFactory is Ownable {
         contracts[_contractIndex].revokeConfirmation(_txIndex);
     }
     
+    function trustyPriceConfig(uint256 price) public onlyOwner returns(uint256) {
+        uint256 new_price = price;
+        _price = new_price;
+        return _price;
+    }
+
      /**
     * @dev withdraw sends all the ether in the contract
     * to the owner of the contract

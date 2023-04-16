@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.13;
 
-//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-//import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 //import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-//import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 //import "@openzeppelin/contracts/interfaces/IERC4626.sol";
-//import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * IERC20(
@@ -174,6 +174,13 @@ contract Trusty {
     }
     */
 
+   /**
+    * 
+    * @param _to Address that will receive the tx or the contract that receive the interaction
+    * @param _value Amount of ether to send
+    * @param _data Optional data field or calldata to another contract
+    * @dev _data can be used as "bytes memory" or "bytes calldata"
+    */
     function submitTransaction(
         address _to,
         uint _value,
