@@ -231,6 +231,8 @@ contract Trusty {
         transaction.executed = true;
 
         (bool success, ) = transaction.to.call{value: transaction.value}(
+            //return abi.encodeWithSignature("callMe(uint256)", 123);
+            //return abi.encodeWithSignature(transaction.data);
             transaction.data
         );
         require(success, "tx failed");

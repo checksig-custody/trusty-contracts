@@ -136,10 +136,10 @@ contract TrustyFactory is Ownable {
         return _price;
     }
 
-     /**
+    /**
     * @dev withdraw sends all the ether in the contract
     * to the owner of the contract
-      */
+    */
     function withdraw() public onlyOwner  {
         address _owner = owner();
         uint256 amount = address(this).balance;
