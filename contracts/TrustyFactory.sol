@@ -1,5 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 
+/**
+ * RMS VAULTY TRUST FACTORY v.0.1
+ */
+
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
