@@ -54,7 +54,8 @@ contract TrustyFactory is Ownable {
         //require(success, "failed send withdraw tx"); // revert forced
 
         //Method 3 call (forward all or set gas, returns bool)
-        (bool success, bytes memory dataReturned) = payable(contracts[_contractIndex]).call{value: _amount }("");
+        //(bool success, bytes memory dataReturned) = payable(contracts[_contractIndex]).call{value: _amount }("");
+        (bool success, ) = payable(contracts[_contractIndex]).call{value: _amount }("");
         require(success, "failed deposit to trusty"); // revert forced
     }
 

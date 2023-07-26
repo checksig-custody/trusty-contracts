@@ -21,7 +21,7 @@ const main = async () => {
   
     // Get price
     let previous_price = await Contract._price();
-    console.log(`price:${previous_price}`)
+    //console.log(`price:${previous_price}`)
 
     // Owner set price
     let set_price = await Contract.trustyPriceConfig(ethers.utils.parseEther("2"));
@@ -36,40 +36,58 @@ const main = async () => {
     //console.log("Owner",owners);
 
     // Create a trusty
-    let create = await Contract.createContract(owners,2);
+    let create = await Contract.createContract(owners,2);    
     //let create = await Contract.createContract(owners,3);
     
     // Get created contract address
     let addr = await Contract.contracts(0);
     console.log("created Trusty: ",addr);
 
+    // Create a second trusty
+    let create2 = await Contract.createContract(owners,2);
+    let addr2 = await Contract.contracts(1);
+    console.log("created Trusty2: ",addr2);
+
+    // Create a third trusty
+    let create3 = await Contract.createContract(owners,2);
+    let addr3 = await Contract.contracts(2);
+    console.log("created Trusty3: ",addr3);
+
+    // Create the mix trusty
+    let createMix = await Contract.createContract([addr,addr2,addr3],2);
+    let addrMix = await Contract.contracts(3);
+    console.log("created TrustyMIX: ",addrMix);
+
     // Deposit into a Trusty
     let amount = '2';
-    let deposit = await Contract.depositContract(0,amount,{value: ethers.utils.parseEther(amount)});
+    let deposit = await Contract.depositContract(3,amount,{value: ethers.utils.parseEther(amount)});
     //let deposit = await Contract.depositContract({value: hre.ethers.utils.parseEther('2')});
 
     // Get the balance of a Trusty
     let balance = await hre.ethers.provider.getBalance(Contract.address);
-    console.log("Factory Balance:",balance);
+    let balanceMix = await hre.ethers.provider.getBalance(addrMix);
+    //console.log("Factory Balance:",balance);
+    //console.log("Mix Balance:",balanceMix);
 
     // Get Owners of Trusty
     let txOwners;
-    txOwners = await Contract.contractReadOwners(0);
+    txOwners = await Contract.contractReadOwners(3);
     console.log("ReadOwners:", txOwners);
 
     // Get balance of Trusty
     let txBalance;
-    txBalance = await Contract.contractReadBalance(0);
+    //txBalance = await Contract.contractReadBalance(0);
+    txBalance = await Contract.contractReadBalance(3);
 
     console.log("BALANCE: ", txBalance);
 
     // Get total txs from Trusty
     let txTotal;
-    txTotal = await Contract.contractReadTxs(0);
-    console.log("Total TXs:", txTotal);
+    //txTotal = await Contract.contractReadTxs(0);
+    //console.log("Total TXs:", txTotal);
 
     // I'm one of the owners of a Trusty?
-    let imOwner = await Contract.imOwner(0)
+    //let imOwner = await Contract.imOwner(0)
     //console.log("ImOwner? ",imOwner);
 
     // Propose to submit a tx from a Trusty
@@ -81,7 +99,7 @@ const main = async () => {
 
     // Get Trusty txs status
     let txGet;
-    txGet = await Contract.getTx(0,0);
+    //txGet = await Contract.getTx(0,0);
     //console.log("get TXs:", txGet);
 
     // Confirm a tx from an account of owners
@@ -100,8 +118,8 @@ const main = async () => {
     //console.log("get TX2s:", txGet2);
 
     // Execute a tx
-    let txExe = await Contract.connect(owner).trustyExecute(0,0);
-    await txExe.wait();
+    //let txExe = await Contract.connect(owner).trustyExecute(0,0);
+    //await txExe.wait();
     //console.log("Executed TX:", txExe.hash);
 
     // Check the received amount

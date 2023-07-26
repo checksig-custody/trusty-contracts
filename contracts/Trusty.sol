@@ -3,11 +3,11 @@
 pragma solidity ^0.8.13;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+//import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 //import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Enumerable.sol";
-import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
+//import "@openzeppelin/contracts/token/ERC1155/IERC1155.sol";
 //import "@openzeppelin/contracts/interfaces/IERC4626.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+//import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * IERC20(
@@ -23,15 +23,16 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  * safeTransferFrom(address from, address to, uint256 tokenId)
  * transferFrom(address from, address to, uint256 tokenId)
  * )
- * 
+ */ 
+/*
 interface ERC20 {
-  function balanceOf(address owner) external view returns (unit);
-  function allowance(address owner, address spender) external view returns (unit);
+  function balanceOf(address owner) external view returns (uint);
+  function allowance(address owner, address spender) external view returns (uint);
   function approve(address spender, uint value) external returns (bool);
   function transfer(address to, uint value) external returns (bool);
   function transferFrom(address from, address to, uint value) external returns (bool); 
 }
- */
+*/
 
 contract Trusty {
     //Eventi
@@ -58,11 +59,11 @@ contract Trusty {
         uint value;
         bytes data;
         bool executed;
-        uint numConfirmations;
-        //bytes note;
+        uint numConfirmations;        
         //bool isToken;
         //address token;
         //address nft;
+        //bytes note;
     }
 
     //address[] public tokensAddresses;
@@ -85,7 +86,8 @@ contract Trusty {
     Transaction[] public transactions;
 
     modifier onlyOwner() {
-        require(isOwner[tx.origin], "not owner");
+        require(isOwner[msg.sender] || isOwner[tx.origin], "not owner");
+        //require(isOwner[tx.origin], "not owner");
         //require(isOwner[msg.sender], "not owner");
         _;
     }
@@ -105,6 +107,7 @@ contract Trusty {
         _;
     }
 
+    // Constructor
     constructor(address[] memory _owners, uint _numConfirmationsRequired) {
         require(_owners.length > 0, "owners required");
         require(
@@ -136,7 +139,7 @@ contract Trusty {
         emit Deposit(tx.origin, msg.value, address(this).balance);
     }
 
-    /**
+    /*
     function importToken() public onlyOwner {}
 
     // deposit token to smart contract is automatic, anyway if needed...
@@ -166,10 +169,22 @@ contract Trusty {
     }
 
     function transferToMe(address _owner, address _token, unit _amount) public {
+        // FROM-TO-AMOUNT
         ERC20(_token).transferFrom(_owner, address(this), _amount);
     }
+    
 
-    function getBalanceOfToken(address _address) public view returns (unit) {
+    // Transfer _amount of _token _to
+    function tokenTransferTo(address _to, address _token, uint _amount) public onlyOwner {
+        require(getBalanceOfToken(_token) >= _amount,'not enough token to transfer!');
+        ERC20(_token).approve(address(this),_amount);
+        //ERC20(_token).transfer(_to, _amount);
+        // FROM-TO-AMOUNT
+        (bool success) = ERC20(_token).transferFrom(address(this), _to, _amount);
+        require(success, "token tx failed");
+    }
+
+    function getBalanceOfToken(address _address) public view returns (uint) {
         return ERC20(_address).balanceOf(address(this));
     }
     */
@@ -185,6 +200,7 @@ contract Trusty {
         address _to,
         uint _value,
         bytes memory _data
+        //bool _isToken
     ) public onlyOwner {
         uint txIndex = transactions.length;
 
@@ -195,6 +211,7 @@ contract Trusty {
                 data: _data,
                 executed: false,
                 numConfirmations: 0
+                //isToken: false
             })
         );
 
@@ -229,14 +246,14 @@ contract Trusty {
         );
 
         transaction.executed = true;
-
+        
         (bool success, ) = transaction.to.call{value: transaction.value}(
             //return abi.encodeWithSignature("callMe(uint256)", 123);
             //return abi.encodeWithSignature(transaction.data);
             transaction.data
         );
         require(success, "tx failed");
-
+        
         emit ExecuteTransaction(tx.origin, _txIndex);
     }
 
