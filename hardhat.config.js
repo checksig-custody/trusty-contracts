@@ -8,10 +8,19 @@ const etherscanKey = process.env.ETHERSCAN_API_KEY;
 module.exports = {
   solidity: "0.8.13",
   networks: {
+    mainnet: {
+      chainId: 1,
+      url: QUICKNODE_HTTP_URL,
+      accounts: [PRIVATE_KEY]
+    },
     goerli: {
       url: QUICKNODE_HTTP_URL,
       accounts: [PRIVATE_KEY],
     },
+    mumbai: {
+      url: QUICKNODE_HTTP_URL,
+      accounts: [PRIVATE_KEY],
+		},
   },
   etherscan: {
     apiKey: {
