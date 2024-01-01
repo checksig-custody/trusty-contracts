@@ -26,7 +26,7 @@ contract TrustyFactory is Ownable {
     //string memory _owner1, string memory _owner2, string memory _owner3 ,uint _nTX
     // payable
     function createContract(address[] memory _owners, uint _nTX) public {
-        //require(msg.value >= _price, "Ether sent is not correct");
+        require(msg.value >= _price, "Ether sent is not enough");
 
         //address[] storage _owners = abi.encodePacked('["', _owner1,'", ','"', _owner2,'", ','"', _owner3,'"],', uint(_nTX)); // ["","",""],3
         //console.log(_owners, _nTX);
