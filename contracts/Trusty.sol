@@ -1,7 +1,7 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 
 /**
- * RMS VAULTY TRUST v.0.1
+ * RMS VAULTY TRUST v0.1
  */
 
 pragma solidity ^0.8.13;

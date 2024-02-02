@@ -1,7 +1,8 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 
 /**
- * RMS VAULTY TRUST FACTORY v.0.1
+ * RMS VAULTY TRUST FACTORY v0.1
+ * Copyright (c) 2024 Ramzi Bougammoura
  */
 
 pragma solidity ^0.8.13;
@@ -25,7 +26,7 @@ contract TrustyFactory is Ownable {
     //address[] memory _owners, uint _numConfirmationsRequired
     //string memory _owner1, string memory _owner2, string memory _owner3 ,uint _nTX
     // payable
-    function createContract(address[] memory _owners, uint _nTX) public {
+    function createContract(address[] memory _owners, uint _nTX) payable public {
         require(msg.value >= _price, "Ether sent is not enough");
 
         //address[] storage _owners = abi.encodePacked('["', _owner1,'", ','"', _owner2,'", ','"', _owner3,'"],', uint(_nTX)); // ["","",""],3

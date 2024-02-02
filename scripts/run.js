@@ -24,7 +24,7 @@ const main = async () => {
     //console.log(`price:${previous_price}`)
 
     // Owner set price
-    let set_price = await Contract.trustyPriceConfig(ethers.utils.parseEther("2"));
+    let set_price = await Contract.trustyPriceConfig(ethers.utils.parseEther("0.02"));
     //console.log(`actual price:${JSON.stringify(set_price.hash)}`);
 
     // Check modified price
@@ -36,7 +36,7 @@ const main = async () => {
     //console.log("Owner",owners);
 
     // Create a trusty
-    let create = await Contract.createContract(owners,2);    
+    let create = await Contract.createContract(owners,2,{value:ethers.utils.parseEther("0.02")}); //
     //let create = await Contract.createContract(owners,3);
     
     // Get created contract address
@@ -44,17 +44,17 @@ const main = async () => {
     console.log("created Trusty: ",addr);
 
     // Create a second trusty
-    let create2 = await Contract.createContract(owners,2);
+    let create2 = await Contract.createContract(owners,2,{value:ethers.utils.parseEther("0.02")});
     let addr2 = await Contract.contracts(1);
     console.log("created Trusty2: ",addr2);
 
     // Create a third trusty
-    let create3 = await Contract.createContract(owners,2);
+    let create3 = await Contract.createContract(owners,2,{value:ethers.utils.parseEther("0.02")});
     let addr3 = await Contract.contracts(2);
     console.log("created Trusty3: ",addr3);
 
     // Create the mix trusty
-    let createMix = await Contract.createContract([addr,addr2,addr3],2);
+    let createMix = await Contract.createContract([addr,addr2,addr3],2,{value:ethers.utils.parseEther("0.02")});
     let addrMix = await Contract.contracts(3);
     console.log("created TrustyMIX: ",addrMix);
 
