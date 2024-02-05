@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
 
 /**
- * RMS VAULTY TRUST v0.1
+ * 0xRMS TRUSTY v0.1
+ * Copyright (c) 2024 Ramzi Bougammoura
  */
 
 pragma solidity ^0.8.13;
