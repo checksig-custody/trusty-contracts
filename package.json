@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "npx hardhat run scripts/run.js",
     "compile": "npx hardhat compile",
+    "start": "npx hardhat run scripts/run.js",
     "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
     "test": "hardhat test",
     "test-id": "hardhat test --grep",

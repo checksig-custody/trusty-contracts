@@ -1,9 +1,7 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("dotenv").config({ path: ".env" });
 
-const INFURA_API_KEY = process.env.INFURA_API_KEY;
-const QUICKNODE_HTTP_URL = process.env.QUICKNODE_HTTP_URL;
-const PRIVATE_KEY = process.env.PRIVATE_KEY;
+const {INFURA_API_KEY, QUICKNODE_HTTP_URL, PRIVATE_KEY} = process.env;
 const etherscanKey = process.env.ETHERSCAN_API_KEY;
 
 module.exports = {

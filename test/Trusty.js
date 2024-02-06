@@ -15,7 +15,7 @@ let Factory = null
 
 describe("Trusty test",async () => {
     // Handle the Multisignature Factory deploy for each test that needs an istance to run and fill the accounts signers
-    async function deployMultisignature() {
+    const deployMultisignature = async ()=>{
         const [owner, otherAccount, otherOwner, otherOwner1, otherOwner2, randomPerson, other, anonymous] = await ethers.getSigners();
         accounts.owner = owner
         accounts.otherAccount = otherAccount
