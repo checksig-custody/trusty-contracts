@@ -39,8 +39,14 @@ interface ERC20 {
 }
 */
 
+/**
+ * @title Trusty Multisignature
+ * @author Ramzi Bougammoura
+ * @notice This contract is inherithed by Trusty Factory deployer
+ * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
+ */
 contract Trusty {
-    //Eventi
+    //Events
     event Deposit(address indexed sender, uint amount, uint balance);
     event SubmitTransaction(
         address indexed owner,
@@ -54,7 +60,7 @@ contract Trusty {
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
     //event TokenDepositComplete(address tokenAddress, uint256 amount);
 
-    //Slots
+    // Variable Slots
     address[] public owners;
     mapping(address => bool) public isOwner;
     uint public numConfirmationsRequired;
@@ -136,10 +142,16 @@ contract Trusty {
         //tokenAddress = _tokenAddress;
     }
 
+    /**
+    * @notice Fallback function triggered when the contract is receiving Ether and msg.data is empty
+    */
     receive() external payable {
         emit Deposit(tx.origin, msg.value, address(this).balance);
     }
 
+    /**
+    * @notice Fallback function triggered when the contract is receiving Ether and msg.data is not empty
+    */
     fallback() external payable {
         emit Deposit(tx.origin, msg.value, address(this).balance);
     }
@@ -194,8 +206,8 @@ contract Trusty {
     }
     */
 
-   /**
-    * 
+    /**
+    * @notice This method is used to submit a transaction proposal that will be seen by the others multisignature's owners
     * @param _to Address that will receive the tx or the contract that receive the interaction
     * @param _value Amount of ether to send
     * @param _data Optional data field or calldata to another contract
@@ -223,6 +235,11 @@ contract Trusty {
         emit SubmitTransaction(tx.origin, txIndex, _to, _value, _data);
     }
 
+    /**
+    * @notice Method used to confirm the transaction with index `_txIndex` if it exists, is not executed yet and also not even confirmed from the signer.
+    * It can only be called by the contract's owners
+    * @param _txIndex The index of the transaction that needs to be signed and confirmed
+    */
     function confirmTransaction(uint _txIndex)
         public
         onlyOwner
@@ -237,6 +254,11 @@ contract Trusty {
         emit ConfirmTransaction(tx.origin, _txIndex);
     }
 
+    /**
+    * @notice Method used to execute the transaction with index `_txIndex` if it exists and is not executed yet.
+    * It can only be called by the contract's owners
+    * @param _txIndex The index of the transaction that needs to be signed and confirmed
+    */
     function executeTransaction(uint _txIndex)
         public
         onlyOwner
@@ -262,6 +284,11 @@ contract Trusty {
         emit ExecuteTransaction(tx.origin, _txIndex);
     }
 
+    /**
+    * @notice Method used to revoke the confirmation of transaction with index `_txIndex` if it exists and is not executed yet.
+    * It can only be called by the contract's owners
+    * @param _txIndex The index of the transaction that needs to be signed and confirmed
+    */
     function revokeConfirmation(uint _txIndex)
         public
         onlyOwner
@@ -278,19 +305,37 @@ contract Trusty {
         emit RevokeConfirmation(tx.origin, _txIndex);
     }
 
+    /**
+    * @notice Method used to execute the transaction with index `_txIndex` if it exists and is not executed yet.
+    * It can only be called by the contract's owners
+    * @return address[] Returns the Trusty's owners as an array
+    */
     function getOwners() public view returns (address[] memory) {
         return owners;
     }
 
+    /**
+    * @notice Method used to get the current Trusty's balance
+    * @return uint256 Returns the Trusty's balance as uint256
+    */
     function getBalance() public view returns (uint256) {
         uint256 amount = address(this).balance;
         return amount;
     }
 
+    /**
+    * @notice Method used to get the current Trusty's total transactions
+    * @return uint Returns the Trusty's total transactions as uint
+    */
     function getTransactionCount() public view returns (uint) {
         return transactions.length;
     }
 
+    /**
+    * @notice Method used to get the transaction proposal structure
+    * @param _txIndex The index of the transaction that needs to be retrieved
+    * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
+    */
     function getTransaction(uint _txIndex)
         public
         view

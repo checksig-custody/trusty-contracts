@@ -12,6 +12,11 @@ import './Trusty.sol';
 
 //import "hardhat/console.sol";
 
+/**
+ * @title Trusty Multisignature Factory
+ * @author Ramzi Bougammoura
+ * @notice This contract helps to deploy, manage and interact with Trusty's multisignature
+ */
 contract TrustyFactory is Ownable {
     // indexed
     Trusty[] public contracts;
@@ -26,6 +31,11 @@ contract TrustyFactory is Ownable {
     //address[] memory _owners, uint _numConfirmationsRequired
     //string memory _owner1, string memory _owner2, string memory _owner3 ,uint _nTX
     // payable
+    /**
+    * @notice This method is used to create a Trusty multisignature
+    * @param _owners Array of owners' addresses
+    * @param _nTX Minimum number of confirmations required to execute a transaction
+    */
     function createContract(address[] memory _owners, uint _nTX) public {
         //require(msg.value >= _price, "Ether sent is not enough");
 
@@ -43,6 +53,11 @@ contract TrustyFactory is Ownable {
         //return trusty;        
     }
 
+    /**
+    * @notice This method is used to make a deposit on a Trusty multisignature
+    * @param _contractIndex The Trusty contract index that will be funded
+    * @param _amount Amount of ether to send
+    */
     function depositContract(uint256 _contractIndex, uint _amount) public payable {
         
         //payable(msg.sender).transfer(1 ether);
@@ -64,6 +79,11 @@ contract TrustyFactory is Ownable {
         require(success, "failed deposit to trusty"); // revert forced
     }
 
+    /**
+    * @notice This method is not currently used
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param _dataToStore Data to be stored in transaction
+    */
     function contractAction(uint256 _contractIndex, uint256 _dataToStore) public {
         //Address
         //ABI Application Binary Interface
@@ -71,11 +91,21 @@ contract TrustyFactory is Ownable {
         //contract.action(_dataToStore);
     }
 
+    /**
+    * @notice This method is used to retrieve the owners of the Trusty multisignature index specified
+    * @param _contractIndex The Trusty contract index that will be called
+    * @return address[] Returns the Trusty's owners' array
+    */
     function contractReadOwners(uint256 _contractIndex) public view returns(address[] memory) {
         //Trusty trusty = Trusty(Trusty[_contractIndex]);
         return contracts[_contractIndex].getOwners();
     }
 
+    /**
+    * @notice This method is used to retrieve the balance of the Trusty multisignature index specified
+    * @param _contractIndex The Trusty contract index that will be called
+    * @return uint256 Returns the Trusty's balance
+    */
     function contractReadBalance(uint256 _contractIndex) public view returns(uint256) {
         //Trusty trusty = Trusty(Trusty[_contractIndex]);
         return contracts[_contractIndex].getBalance();
