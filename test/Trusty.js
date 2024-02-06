@@ -6,7 +6,7 @@ const accounts = {
     otherOwner1: "",
     otherOwner2: "",
     otherAccount: "",
-    randomPerson: "",
+    randomAccount: "",
     other: "",
     anonymous: ""
 }
@@ -15,21 +15,19 @@ let Factory = null
 
 describe("Trusty test",async () => {
     // Handle the Multisignature Factory deploy for each test that needs an istance to run and fill the accounts signers
-    const deployMultisignature = async ()=>{
-        const [owner, otherAccount, otherOwner, otherOwner1, otherOwner2, randomPerson, other, anonymous] = await ethers.getSigners();
+    const deployMultisignature = async () => {
+        const [owner, otherAccount, otherOwner, otherOwner1, otherOwner2, randomAccount, other, anonymous] = await ethers.getSigners();
         accounts.owner = owner
         accounts.otherAccount = otherAccount
         accounts.otherOwner = otherOwner
         accounts.otherOwner1 = otherOwner1
         accounts.otherOwner2 = otherOwner2
-        accounts.randomPerson = randomPerson
+        accounts.randomAccount = randomAccount
         accounts.other = other
         accounts.anonymous = anonymous
         
         const MusigFactory = await ethers.getContractFactory("TrustyFactory");
         const musigFactory = await MusigFactory.deploy({ value: 0 });
-        //console.log(`[deployed contract]: ${musigFactory.address}`)
-        //console.log(`[Multisignature Contract]: ${Object.keys(musigFactory)}`)
         Factory = musigFactory
     }
     
@@ -50,52 +48,33 @@ describe("Trusty test",async () => {
 
     describe("Deploy test",async() => { 
         it("factory deploy test",async () => {
-            await deployMultisignature()
-            //console.log(`[Multisignature Contract]: ${Object.keys(contract)}`)
-            //console.log(`[Deploy tx hash]: ${Factory.deployTransaction.hash}`)
-            //console.log(`[Contract address]: ${Factory.address}`)
-    
+            await deployMultisignature()    
             expect(Factory.deployTransaction.hash !== null && Factory.address !== null)
         });
 
         it("factory owner test",async () => {
             await deployMultisignature()
-        
-            //console.log("[Factory Owner]: ",await Factory.owner())
-    
             expect(accounts.owner === Factory.signer.address === Factory.deployTransaction.from === await Factory.owner())
         });
 
         it("create trusty test",async () => {
             await deployMultisignature()
 
-            let owners = [accounts.owner.address, accounts.randomPerson.address, accounts.other.address];
+            let owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
 
             let totalPre = await Factory.totalTrusty()
             
             expect(totalPre).equals(0)
 
-            let create = await Factory.createContract(owners,2,{value:0}); //ethers.utils.parseEther("0.02")
+            let create = await Factory.createContract(owners,2,{value:0});
 
             let totalPost = await Factory.totalTrusty()
 
             expect(totalPost).equals(1)
 
-            let addr = await Factory.contracts(0);
-
-            console.log("created multisig: ",addr);
+            //let addr = await Factory.contracts(0);
 
             expect(create.hash !== null)
         });
     });
-    
-    describe("Re-deploy test",async ()=>{
-        it("factory re-deploy",async ()=>{
-            await deployMultisignature()
-            //console.log(`[Contract address]: ${Factory.address}`)
-        })
-    })
-
-
-
 });

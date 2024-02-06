@@ -1,125 +1,132 @@
 const { ethers } = require("hardhat");
+const { mine } = require("@nomicfoundation/hardhat-network-helpers");
 
 const main = async () => {
 
-  // owner
-  // randomPerson
-  // other  
-  const [owner, randomPerson, other] = await hre.ethers.getSigners();
+  // Get signers's account object from hardhat runtime environment.
+  // By default, Contract instances are connected to the first signer.
+  const [owner, randomAccount, other] = await hre.ethers.getSigners();
 
+  // Get the contract's code to be deployed from `contracts/TrustyFactory.sol`
   const ContractFactory = await hre.ethers.getContractFactory("TrustyFactory");
 
+  // Deploy locally the contract and wait for his availability 
   const Contract = await ContractFactory.deploy();
   await Contract.deployed();  
-  console.log("TrustyFactory Contract deployed to:", Contract.address);
-  console.log("TrustyFactory Owner:", owner.address);
+  console.log("[TrustyFactory address]:", Contract.address);
+  console.log("[TrustyFactory Owner address]:", owner.address);
 
-  // Get price
-  const previous_price = await Contract._price();
-  //console.log(`price:${previous_price}`)
+  // `_price` is a public-readable variable that can only be set by the TrustyFactory contract's owner/deployer by calling the proper method
+  const previousPrice = await Contract._price();
+  console.log(`[previousPrice]: ${previousPrice}`)
 
-  // Owner set price
-  const set_price = await Contract.trustyPriceConfig(ethers.utils.parseEther("0.02"));
-  //console.log(`actual price:${JSON.stringify(set_price.hash)}`);
-
-  // Check modified price
-  let actual_price = await Contract._price();
-  console.log(`price:${actual_price}`)
+  // Owner sets the price
+  const setPrice = await Contract.trustyPriceConfig(ethers.utils.parseEther("0.02"));
+  console.log(`[setPrice tx hash]: ${JSON.stringify(setPrice.hash)}`)
   
-  // Get addresses from accouns
-  let owners = [owner.address,randomPerson.address, other.address];
-  //console.log("Owner",owners);
+  // Attempt to change the price from a not owner account
+  /*
+  try {
+    const setPriceByNotOwner = await Contract.connect(randomAccount).trustyPriceConfig(ethers.utils.parseEther("0.02"));  
+  } catch (error) {
+    console.log("[TX Error]: Only the Factory's Owner is able to change the price")
+  }
+  */
+  
+  // Check the modified price calling the read-only _price variable
+  const actualPrice = await Contract._price();
+  console.log(`[actualPrice]: ${actualPrice}`)
+  
+  // Get the addresses from signers' accounts
+  const owners = [owner.address,randomAccount.address, other.address];
 
-  // Create a trusty
-  let create = await Contract.createContract(owners, 2, {value:0}); //ethers.utils.parseEther("0.02")
-  //let create = await Contract.createContract(owners,3);
+  // Create a Trusty multisignature
+  const create = await Contract.createContract(owners, 2, {value:0}); //ethers.utils.parseEther("0.02")
   
   // Get created contract address
-  let addr = await Contract.contracts(0);
-  console.log("created Trusty: ", addr);
+  const addr = await Contract.contracts(0);
+  console.log("[Trusty address]: ", addr);
 
-  // Create a second trusty
-  let create2 = await Contract.createContract(owners, 2, {value:0}); //ethers.utils.parseEther("0.02")
-  let addr2 = await Contract.contracts(1);
-  console.log("created Trusty2: ", addr2);
+  // Create a second Trusty
+  const create2 = await Contract.createContract(owners, 2, {value:0});
 
-  // Create a third trusty
-  let create3 = await Contract.createContract(owners, 2, {value:0}); //ethers.utils.parseEther("0.02")
-  let addr3 = await Contract.contracts(2);
-  console.log("created Trusty3: ", addr3);
+  // Retrieve the contract's address from Factory calling the method `contracts()` and passing the index number
+  const addr2 = await Contract.contracts(1);
+  console.log("[Trusty2 address]: ", addr2);
 
-  // Create the mix trusty
-  let createMix = await Contract.createContract([addr, addr2, addr3], 2, {value:0}); //ethers.utils.parseEther("0.02")
-  let addrMix = await Contract.contracts(3);
-  console.log("created TrustyMIX: ", addrMix);
+  // Create a third Trusty
+  const create3 = await Contract.createContract(owners, 2, {value:0}); 
+  const addr3 = await Contract.contracts(2);
+  console.log("[Trusty3 address]: ", addr3);
 
-  // Deposit into a Trusty
-  let amount = '2';
-  let deposit = await Contract.depositContract(3, amount,{value: ethers.utils.parseEther(amount)});
-  //let deposit = await Contract.depositContract({value: hre.ethers.utils.parseEther('2')});
+  // Create a Trusty whose owners are 1 Externally Owned Account (with private keys) plus the previous Trusties created (without private keys) resulting in a chained tree of Trusty multisignatures 
+  const createMix = await Contract.createContract([addr, addr2, addr3], 2, {value:0}); 
+  const trustyMixAddr = await Contract.contracts(3);
+  console.log("[TrustyMIX address]: ", trustyMixAddr);
 
-  // Get the balance of a Trusty
-  let balance = await hre.ethers.provider.getBalance(Contract.address);
-  let balanceMix = await hre.ethers.provider.getBalance(addrMix);
-  //console.log("Factory Balance:",balance);
-  //console.log("Mix Balance:",balanceMix);
+  // Deposit into a Trusty using the Factory method `depostiContract()` and the index of the Trusty to be funded
+  const amount = '123';
+  const deposit0 = await Contract.depositContract(0, amount,{value: ethers.utils.parseEther("111")});
+  const deposit3 = await Contract.depositContract(3, amount,{value: ethers.utils.parseEther(amount)});
 
-  // Get Owners of Trusty
-  let txOwners;
-  txOwners = await Contract.contractReadOwners(3);
-  console.log("ReadOwners:", txOwners);
+  // Simulate block height progress (mining)
+  await mine(1).then(async()=>{
+    // Get the balance of a Trusty like an RPC
+    const factoryBalance = await hre.ethers.provider.getBalance(Contract.address);
+    console.log("[Factory balance]:",factoryBalance, Contract.address);
+  });
 
-  // Get balance of Trusty
-  let txBalance;
-  //txBalance = await Contract.contractReadBalance(0);
-  txBalance = await Contract.contractReadBalance(3);
+  await mine(1).then(async()=>{
+    const trustyMixBalance = await hre.ethers.provider.getBalance(trustyMixAddr);  
+    console.log("[RPC-trustyMixAddr balance]:",trustyMixBalance, trustyMixAddr);
+  });
 
-  console.log("BALANCE: ", txBalance);
+  // Get balance of Trusty from Factory contract's method
+  const txBalance = await Contract.contractReadBalance(3);
+  console.log("[Contract call-trustyMixAddr balance]: ", txBalance);
+
+  // Get the Owners of a Trusty
+  const txOwners = await Contract.contractReadOwners(3);
+  console.log("[ReadOwners]:", txOwners);
 
   // Get total txs from Trusty
-  let txTotal;
-  //txTotal = await Contract.contractReadTxs(0);
-  //console.log("Total TXs:", txTotal);
+  const txTotal = await Contract.contractReadTxs(0);
+  console.log("Total TXs:", txTotal);
 
-  // I'm one of the owners of a Trusty?
-  //let imOwner = await Contract.imOwner(0)
-  //console.log("ImOwner? ",imOwner);
+  // Am I one of the owners of a Trusty?
+  const imOwner = await Contract.imOwner(0);
+  console.log("[ImOwner?] ",imOwner);
 
   // Propose to submit a tx from a Trusty
-  let txSend;
-  txSend = await Contract.connect(owner).trustySubmit(0, other.address, 1, 0x00);
+  const txSend = await Contract.connect(owner).trustySubmit(0, other.address, 1, 0x00);
   await txSend.wait();
-  //txSend = await Contract.trustySubmit(0, other.address, 1, 0x00);
-  //console.log("send TXs:", txSend);
 
   // Get Trusty txs status
-  let txGet;
-  //txGet = await Contract.getTx(0,0);
-  //console.log("get TXs:", txGet);
+  const txGet = await Contract.getTx(0,0);
+  console.log("[get TX status]:", txGet);
 
   // Confirm a tx from an account of owners
-  let txConfirm;
-  txConfirm = await Contract.connect(randomPerson).trustyConfirm(0, 0);
+  const txConfirm = await Contract.connect(randomAccount).trustyConfirm(0, 0);
   await txConfirm.wait();
 
   // Confirm a tx from another account of owners
-  let txConfirm2;
-  txConfirm2 = await Contract.connect(other).trustyConfirm(0, 0);
+  const txConfirm2 = await Contract.connect(other).trustyConfirm(0, 0);
   await txConfirm2.wait();
 
-  // Get Trusty txs status x2
-  let txGet2;
-  txGet2 = await Contract.getTx(0, 0);
-  //console.log("get TX2s:", txGet2);
+  await mine(1).then(async ()=>{
+    // Execute a tx
+    const txExe = await Contract.connect(owner).trustyExecute(0,0);
+    await txExe.wait();
+    console.log("[Executed TX hash]:", txExe.hash);
 
-  // Execute a tx
-  //let txExe = await Contract.connect(owner).trustyExecute(0,0);
-  //await txExe.wait();
-  //console.log("Executed TX:", txExe.hash);
+    // Check the received amount
+    const receiver = await hre.ethers.provider.getBalance(other.address);
+    console.log("[Receiver balance]:", receiver, other.address);
 
-  // Check the received amount
-  let receiver = await hre.ethers.provider.getBalance(other.address);
-  //console.log("receiver balance:",receiver);
+    // Get Trusty txs status x2
+    const txGet2 = await Contract.getTx(0, 0);
+    console.log("[get TX status updated]:", txGet2);
+  });
 };
 
 const runMain = async () => {
