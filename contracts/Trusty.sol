@@ -7,6 +7,8 @@
 
 pragma solidity ^0.8.13;
 
+//import "hardhat/console.sol";
+
 /**
  * @title Trusty Multisignature
  * @author Ramzi Bougammoura
@@ -85,20 +87,6 @@ contract Trusty {
         }
 
         numConfirmationsRequired = _numConfirmationsRequired;
-    }
-
-    /**
-    * @notice Fallback function triggered when the contract is receiving Ether and msg.data is empty
-    */
-    receive() external payable {
-        emit Deposit(tx.origin, msg.value, address(this).balance);
-    }
-
-    /**
-    * @notice Fallback function triggered when the contract is receiving Ether and msg.data is not empty
-    */
-    fallback() external payable {
-        emit Deposit(tx.origin, msg.value, address(this).balance);
     }
 
     /**
@@ -222,13 +210,25 @@ contract Trusty {
     }
 
     /**
+    * @notice Fallback function triggered when the contract is receiving Ether and msg.data is empty
+    */
+    receive() external payable {
+        emit Deposit(tx.origin, msg.value, address(this).balance);
+    }
+
+    /**
+    * @notice Fallback function triggered when the contract is receiving Ether and msg.data is not empty
+    */
+    fallback() external payable {
+        emit Deposit(tx.origin, msg.value, address(this).balance);
+    }
+
+    /**
     * @notice Method used by the owners to destroy the contract making it unusuable and withdrawing all the funds
     */
-    /*
     function destroy() public onlyOwner {
         //selfdestruct(payable(address)) > address.send(this.balance);
         address _address = tx.origin;
         selfdestruct(payable(_address));
     }
-    */
 }

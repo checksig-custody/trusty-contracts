@@ -10,6 +10,8 @@ pragma solidity ^0.8.13;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Trusty.sol";
 
+//import "hardhat/console.sol";
+
 /**
  * @title Trusty Multisignature Factory
  * @author Ramzi Bougammoura

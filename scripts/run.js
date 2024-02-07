@@ -70,13 +70,13 @@ const main = async () => {
   const deposit3 = await Contract.depositContract(3, amount,{value: ethers.utils.parseEther(amount)});
 
   // Simulate block height progress (mining)
-  await mine(1).then(async()=>{
+  await mine(1).then(async () => {
     // Get the balance of a Trusty like an RPC
     const factoryBalance = await hre.ethers.provider.getBalance(Contract.address);
     console.log("[Factory balance]:",factoryBalance, Contract.address);
   });
 
-  await mine(1).then(async()=>{
+  await mine(1).then(async () => {
     const trustyMixBalance = await hre.ethers.provider.getBalance(trustyMixAddr);  
     console.log("[RPC-trustyMixAddr balance]:",trustyMixBalance, trustyMixAddr);
   });
@@ -113,7 +113,7 @@ const main = async () => {
   const txConfirm2 = await Contract.connect(other).trustyConfirm(0, 0);
   await txConfirm2.wait();
 
-  await mine(1).then(async ()=>{
+  await mine(1).then(async () => {
     // Execute a tx
     const txExe = await Contract.connect(owner).trustyExecute(0,0);
     await txExe.wait();
