@@ -33,11 +33,30 @@ npx hardhat run scripts/deploy.js --network mainnet
 npx hardhat verify --network goerli 0xabcdef12345... "ConstructorArg1" "ConstructorArg2" 
 ```
 
+## Scripts commands shortcut
+
+```shell
+# Compile
+npm run compile
+
+# Start
+npm run start
+
+# Deploy
+npm run deploy
+```
+
 ## Integration tests
 
 ```shell
 # Run all tests
 npm run test
+
+# Test with GAS fee estimation
+npm run test-gas
+
+# Test all
+npm run test-all
 
 # Run a specific test-id
 npm run test-id -- 'Create trusty test'
