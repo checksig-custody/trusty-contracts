@@ -13,7 +13,10 @@ const accounts = {
     other: "",
     anonymous: ""
 }
-let Factory = null
+let Factory = null;
+let Trusty = null;
+
+const ethDecimals = 10**18;
 
 /**
  * [Trusty Multisignature Contract]: 
@@ -46,13 +49,21 @@ describe("Trusty tests", async () => {
 
     // Handle the Trusty Multisignature Factory deploy for each test that needs an istance to run and fill the necessary accounts signers
     const deployFactory = async () => {    
-        istantiateAccounts()    
+        istantiateAccounts()
         const MusigFactory = await ethers.getContractFactory("TrustyFactory");
         const musigFactory = await MusigFactory.deploy({ value: 0 });
         Factory = musigFactory
     }
 
-    describe("Deploy tests", async() => { 
+    // Handle the Trusty Multisignature single deploy for each test that needs an istance to run and fill the necessary accounts signers
+    const deployTrustySingle = async (owners, threshold = 2) => {    
+        const Musig = await ethers.getContractFactory("Trusty");
+        const musig = await Musig.deploy(owners, threshold, { value: 0 });
+        Trusty = musig
+    }
+
+    // Tests with Factory intermediation
+    describe("Deploy Factory tests", async() => { 
         it("factory deploy test", async () => {
             await deployFactory()
             expect(Factory.deployTransaction.hash !== null && Factory.address !== null)
@@ -527,16 +538,16 @@ describe("Trusty tests", async () => {
             
             let trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
             let ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
-            //console.log(`[owner-pre-deposit]: ${ownerBalance/10**18}`)
-            //console.log(`[trusty-pre-deposit]: ${trustyBalance/10**18}`)
+            //console.log(`[owner-pre-deposit]: ${ownerBalance/ethDecimals}`)
+            //console.log(`[trusty-pre-deposit]: ${trustyBalance/ethDecimals}`)
             
             const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
             await txDeposit.wait();
 
             trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
             ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
-            //console.log(`[owner-post-deposit]: ${ownerBalance/10**18}`)
-            //console.log(`[trusty-post-deposit]: ${trustyBalance/10**18}`)
+            //console.log(`[owner-post-deposit]: ${ownerBalance/ethDecimals}`)
+            //console.log(`[trusty-post-deposit]: ${trustyBalance/ethDecimals}`)
             
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
 
@@ -547,8 +558,8 @@ describe("Trusty tests", async () => {
 
             trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
             ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
-            //console.log(`[owner-post-destroy]: ${ownerBalance/10**18}`)
-            //console.log(`[trusty-post-destroy]: ${trustyBalance/10**18}`)     
+            //console.log(`[owner-post-destroy]: ${ownerBalance/ethDecimals}`)
+            //console.log(`[trusty-post-destroy]: ${trustyBalance/ethDecimals}`)     
             
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(0)
             expect(await hre.ethers.provider.getBalance(accounts.owner.address)).to.equal(BigInt(trustyBalance) + BigInt(ownerBalance))
@@ -582,5 +593,39 @@ describe("Trusty tests", async () => {
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount)
         })
         
+    })
+
+    // Tests without Factory intermediation
+    describe("Deploy single Trusty without Factory interaction tests", async () => {
+        it("deploy single Trusty test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await deployTrustySingle(owners,2);
+            const trustyAddress = Trusty.address;
+            //console.log(`[Trusty address]: ${trustyAddress}`);
+            expect(Trusty.deployTransaction.hash !== null && Trusty.address !== null);
+        })
+
+        it("deposit to single Trusty test", async () => {
+            await istantiateAccounts();
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await deployTrustySingle(owners,2);
+            const trustyAddress = Trusty.address;
+            
+            const amount = ethers.utils.parseEther("0.1");
+
+            // Send ETH without `data`
+            await accounts.owner.sendTransaction({to: trustyAddress, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddress)).to.equal(amount);
+
+            // Send ETH with `data`
+            await accounts.owner.sendTransaction({to: trustyAddress, value: amount, data: Buffer.from("asd")});
+            expect(await hre.ethers.provider.getBalance(trustyAddress)).to.equal(BigInt(amount*2)); //2*10**18
+
+            const ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+            const trustyBalance = await hre.ethers.provider.getBalance(trustyAddress);
+            //console.log(`[ownerBalance]: ${ownerBalance/ethDecimals}`);
+            //console.log(`[trustyBalance]: ${trustyBalance/ethDecimals}`);
+        })
     })
 });
