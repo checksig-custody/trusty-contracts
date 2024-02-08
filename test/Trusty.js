@@ -1,4 +1,4 @@
-const { assert, expect } = require("chai");
+const { expect } = require("chai");
 const hre = require("hardhat");
 const { ethers } = require("hardhat");
 const { mine } = require("@nomicfoundation/hardhat-network-helpers");
@@ -226,6 +226,46 @@ describe("Trusty tests", async () => {
             const create = await Factory.createContract(owners,2,{value:0});
             const trustyAddr = await Factory.contracts(0);
 
+            const amount = ethers.utils.parseEther("1");
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            await txConfirm2.wait();
+
+            // Execute a tx
+            const txExe = await Factory.connect(accounts.owner).trustyExecute(0,0);
+            await txExe.wait();
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance));
+
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[3]).to.equal(true);
+        })
+
+        it("should revert execution of a transaction proposal already executed test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            const create = await Factory.createContract(owners,2,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
             const amount = ethers.utils.parseEther("1")
             
             const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
@@ -251,15 +291,62 @@ describe("Trusty tests", async () => {
 
             const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
 
-            expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance))
+            expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance));
 
             // Get Trusty txs status
             const txGet = await Factory.getTx(0,0);
 
             expect(txGet[3]).to.equal(true)
+
+            // Re-Execute same tx
+            await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.reverted;
+            await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.revertedWith("tx already executed");
+            
+            expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance));
         })
 
-        it("should revert with a transaction proposal from not owner test", async () => {
+        it("should revert execution of a transaction proposal with more amount than balance test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            const create = await Factory.createContract(owners,2,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("1")
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount + BigInt(1), 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            await txConfirm2.wait();
+
+            // Execute a tx
+            await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.reverted
+            await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.revertedWith("tx failed")
+            
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[3]).to.equal(false)
+            
+        })
+
+        it("should revert a transaction proposal from not owner test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
@@ -306,7 +393,37 @@ describe("Trusty tests", async () => {
             expect(txGet[4]).to.equal(2)
         })
 
-        it("confirm a transaction proposal from not owner test", async () => {
+        it("should revert a transaction proposal already confirmed from the same caller test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            const create = await Factory.createContract(owners,2,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("1")
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.owner).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Re-Confirm a tx from another account of owners
+            await expect(Factory.connect(accounts.owner).trustyConfirm(0, 0)).to.be.reverted;
+            await expect(Factory.connect(accounts.owner).trustyConfirm(0, 0)).to.be.revertedWith("tx already confirmed");
+            
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[4]).to.equal(1)
+        })
+
+        it("should revert confirmation of a transaction proposal from not owner test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
@@ -534,7 +651,7 @@ describe("Trusty tests", async () => {
             const create = await Factory.createContract(owners,2,{value:0});
             const trustyAddr = await Factory.contracts(0);
 
-            const amount = ethers.utils.parseEther("9986.9184") //BigInt("9999877625337030627022") 
+            const amount = ethers.utils.parseEther("86.9184") //BigInt("99877625337030627022") 
             
             let trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
             let ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
@@ -571,7 +688,7 @@ describe("Trusty tests", async () => {
             const create = await Factory.createContract(owners,2,{value:0});
             const trustyAddr = await Factory.contracts(0);
 
-            const amount = ethers.utils.parseEther("9986.9184")
+            const amount = ethers.utils.parseEther("86.9184")
 
             const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
             await txDeposit.wait();
@@ -604,7 +721,7 @@ describe("Trusty tests", async () => {
             const trustyAddress = Trusty.address;
             //console.log(`[Trusty address]: ${trustyAddress}`);
             expect(Trusty.deployTransaction.hash !== null && Trusty.address !== null);
-        })
+        });
 
         it("deposit to single Trusty test", async () => {
             await istantiateAccounts();
@@ -626,6 +743,55 @@ describe("Trusty tests", async () => {
             const trustyBalance = await hre.ethers.provider.getBalance(trustyAddress);
             //console.log(`[ownerBalance]: ${ownerBalance/ethDecimals}`);
             //console.log(`[trustyBalance]: ${trustyBalance/ethDecimals}`);
-        })
+        });
+
+        it("submit, confirm, execute transaction with single Trusty test", async () => {
+            await istantiateAccounts();
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await deployTrustySingle(owners,2);
+            const trustyAddress = Trusty.address;
+            
+            const amount = ethers.utils.parseEther("0.1");
+
+            // Send ETH without `data`
+            await accounts.owner.sendTransaction({to: trustyAddress, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddress)).to.equal(amount);
+
+            // Send ETH with `data`
+            await accounts.owner.sendTransaction({to: trustyAddress, value: amount, data: Buffer.from("asd")});
+            expect(await hre.ethers.provider.getBalance(trustyAddress)).to.equal(BigInt(amount*2)); //2*10**18
+
+            const ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+            const trustyBalance = await hre.ethers.provider.getBalance(trustyAddress);
+            //console.log(`[ownerBalance]: ${ownerBalance/ethDecimals}`);
+            //console.log(`[trustyBalance]: ${trustyBalance/ethDecimals}`);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            // Submit transaction proposal
+            const txSend = await Trusty.connect(accounts.owner).submitTransaction(accounts.anonymous.address, amount, 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Trusty.connect(accounts.randomAccount).confirmTransaction(0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Trusty.connect(accounts.other).confirmTransaction(0);
+            await txConfirm2.wait();
+
+            // Execute a tx
+            const txExe = await Trusty.connect(accounts.owner).executeTransaction(0);
+            await txExe.wait();
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance));
+
+            // Get Trusty txs status
+            const txGet = await Trusty.getTransaction(0);
+
+            expect(txGet[3]).to.equal(true)
+        });
     })
 });
