@@ -208,7 +208,7 @@ describe("Trusty tests", async () => {
     })
 
     // Submit TX
-    describe("Submit transaction tests", async () =>{
+    describe("Submit, confirm, execute transaction tests", async () =>{
         it("submit, confirm and execute a transaction proposal test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -361,6 +361,42 @@ describe("Trusty tests", async () => {
             expect(txGet[4]).to.equal(1)
         })
 
+        it("should revert the revoke of a transaction proposal from not owner test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            const create = await Factory.createContract(owners,2,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("1")
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            await txConfirm2.wait();
+
+            // Revoke a tx from a not owner account
+            await expect(Factory.connect(accounts.anonymous).trustyRevoke(0, 0)).to.be.reverted
+            await expect(Factory.connect(accounts.anonymous).trustyRevoke(0, 0)).to.be.revertedWith("not owner")
+
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[4]).to.equal(2)
+        })
+
         it("execute a transaction proposal test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -401,15 +437,84 @@ describe("Trusty tests", async () => {
             expect(txGet[3]).to.equal(true)
         })
 
+        it("should revert the execution of a transaction proposal with less confirmation than minimum test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            const create = await Factory.createContract(owners,3,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("1")
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            await txConfirm2.wait();
+
+            // Execute a tx
+            await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.reverted
+            await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.revertedWith("cannot execute tx due to number of confirmation required")
+
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[3]).to.equal(false)
+        })
+
+        it("should revert the execution of a transaction proposal from not owner test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            const create = await Factory.createContract(owners,2,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("1")
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            await txConfirm2.wait();
+
+            // Execute a tx
+            await expect(Factory.connect(accounts.anonymous).trustyExecute(0,0)).to.be.reverted
+            await expect(Factory.connect(accounts.anonymous).trustyExecute(0,0)).to.be.revertedWith("not owner")
+            
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[3]).to.equal(false)
+        })
+
         /*
         it("test", async () => {
             await mine(1).then(async () => {})
         })
         */
     })
-    // Sign TX
-    // Revoke TX
-    // Execute TX
 
     // Destroy
 });
