@@ -54,7 +54,7 @@ describe("Trusty tests", async () => {
 
     describe("Deploy tests", async() => { 
         it("factory deploy test", async () => {
-            await deployFactory()    
+            await deployFactory()
             expect(Factory.deployTransaction.hash !== null && Factory.address !== null)
         });
 
@@ -207,7 +207,6 @@ describe("Trusty tests", async () => {
         })
     })
 
-    // Submit TX
     describe("Submit, confirm, execute transaction tests", async () =>{
         it("submit, confirm and execute a transaction proposal test", async () => {
             await deployFactory()
@@ -516,5 +515,72 @@ describe("Trusty tests", async () => {
         */
     })
 
-    // Destroy
+    describe("Destroy tests", async () => {
+        it("destroy trusty and withdraw funds test", async () => {
+            await deployFactory();
+
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            const create = await Factory.createContract(owners,2,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("9986.9184") //BigInt("9999877625337030627022") 
+            
+            let trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
+            let ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+            //console.log(`[owner-pre-deposit]: ${ownerBalance/10**18}`)
+            //console.log(`[trusty-pre-deposit]: ${trustyBalance/10**18}`)
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+
+            trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
+            ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+            //console.log(`[owner-post-deposit]: ${ownerBalance/10**18}`)
+            //console.log(`[trusty-post-deposit]: ${trustyBalance/10**18}`)
+            
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const trusty = await ethers.getContractFactory("Trusty");
+            const contract = trusty.attach(trustyAddr);
+
+            await contract.connect(accounts.owner).destroy();
+
+            trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
+            ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+            //console.log(`[owner-post-destroy]: ${ownerBalance/10**18}`)
+            //console.log(`[trusty-post-destroy]: ${trustyBalance/10**18}`)     
+            
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(0)
+            expect(await hre.ethers.provider.getBalance(accounts.owner.address)).to.equal(BigInt(trustyBalance) + BigInt(ownerBalance))
+        })
+        
+        it("destroy trusty and withdraw funds from not owner test", async () => {
+            await deployFactory();
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            const create = await Factory.createContract(owners,2,{value:0});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("9986.9184")
+
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+
+            let trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
+            let ownerBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const trusty = await ethers.getContractFactory("Trusty");
+            const contract = trusty.attach(trustyAddr);
+
+            await expect(contract.connect(accounts.anonymous).destroy()).to.be.reverted
+            await expect(contract.connect(accounts.anonymous).destroy()).to.be.revertedWith("not owner")
+
+            trustyBalance = await hre.ethers.provider.getBalance(trustyAddr);
+            ownerBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount)
+        })
+        
+    })
 });
