@@ -61,7 +61,7 @@ contract TrustyFactory is Ownable {
     /**
     * @notice This method is used to retrieve the owners of the Trusty multisignature index specified
     * @param _contractIndex The Trusty contract index that will be called
-    * @return address[] Returns the Trusty's owners' array
+    * @return address[] Returns the Trusty's owners' addresses array
     */
     function contractReadOwners(uint256 _contractIndex) public view returns(address[] memory) {
         //Trusty trusty = Trusty(Trusty[_contractIndex]);
@@ -78,46 +78,88 @@ contract TrustyFactory is Ownable {
         return contracts[_contractIndex].getBalance();
     }
 
+    /**
+    * @notice This method is used to retrieve the total amount of transactions of Trusty's index specified
+    * @param _contractIndex The Trusty contract index that will be called
+    * @return total Returns the total amount of created transactions of a Trusty as `uint`
+    */
     function contractReadTxs(uint256 _contractIndex) public view returns(uint total) {
         uint txTotal = contracts[_contractIndex].getTransactionCount();
 
         return txTotal;
     }
 
+    /**
+    * @notice This method is used to check if the caller of Trusty's index specified is one of the owners
+    * @param _contractIndex The Trusty contract index that will be called
+    * @return bool Returns `true` if the caller is owner of the Trusty index specified
+    */
     function imOwner(uint256 _contractIndex) public view returns(bool) {
         return contracts[_contractIndex].isOwner(tx.origin);
     }
 
+    /**
+    * @notice This method is used to retrieve the transaction data structure specified by its contract and transaction index
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param _txIndex The transaction index of the contract's index specified
+    * @custom:return bool Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
+    */
     function getTx(uint256 _contractIndex, uint _txIndex) public view returns(address, uint, bytes memory, bool, uint) {
         return contracts[_contractIndex].getTransaction(_txIndex);
     }
     
+    /**
+    * @notice This method is used to submit a proposal of a transaction whose details are specified by method's parameters
+    * @param _contractIndex The Trusty contract index that will be used to submit the transaction proposal
+    * @param _to The receiver address of the proposed transaction or the contract's address to interact with
+    * @param _value The amount value of the proposed transaction
+    * @param _data The data parameter can contains ordinary data or an encoded call to interact with another contract
+    */
     function trustySubmit(uint256 _contractIndex, address _to, uint256 _value, bytes memory _data) public {
         contracts[_contractIndex].submitTransaction(_to, _value, _data);
     }
     
+    /**
+    * @notice This method is used to sign and confirm a transaction proposal by one of his owners
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param _txIndex The transaction index of the contract's index specified
+    */
     function trustyConfirm(uint256 _contractIndex, uint _txIndex) public {
         contracts[_contractIndex].confirmTransaction(_txIndex);
     }
 
+    /**
+    * @notice This method is used to execute a transaction by one of his owners if requirements are met
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param _txIndex The transaction index of the contract's index specified
+    */
     function trustyExecute(uint256 _contractIndex, uint _txIndex) public {
         contracts[_contractIndex].executeTransaction(_txIndex);
     }
 
+    /**
+    * @notice This method is used to revoke a transaction proposal if previously signed and confirmed by the caller
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param _txIndex The transaction index of the contract's index specified
+    */
     function trustyRevoke(uint256 _contractIndex, uint _txIndex) public {
         contracts[_contractIndex].revokeConfirmation(_txIndex);
     }
     
+    /**
+    * @notice This method is used by the Trusty Factory's owner to set a price for the creation of a Trusty
+    * @param price The new price that will override the previous one
+    * @return uint256 Returns the new price configured
+    */
     function trustyPriceConfig(uint256 price) public onlyOwner returns(uint256) {
-
         uint256 newPrice = price;
         _price = newPrice;
         return _price;
     }
 
     /**
-    * @dev withdraw sends all the ether in the contract
-    * to the owner of the contract
+    * @notice This method is used by the Trusty Factory's owner to withdraw any amount deposited in the Factory
+    * @dev withdraw and sends all the ethers in the contract
     */
     function withdraw() public onlyOwner {
         address _owner = owner();
