@@ -27,6 +27,7 @@ contract TrustyFactory is Ownable {
 
     //  _price of one Trusty
     uint256 public _price = 0.1 ether;
+    bool public _priceEnabled = false;
 
     // Map owners address array to Trusty index
     mapping(uint256 => address[]) public trustyOwner;
@@ -36,9 +37,12 @@ contract TrustyFactory is Ownable {
     * @param _owners Array of owners' addresses
     * @param _nTX Minimum number of confirmations required to execute a transaction
     */
-    function createContract(address[] memory _owners, uint _nTX) public {
+    function createContract(address[] memory _owners, uint _nTX) payable public {
         // uncomment and add `payable` modifier to enable price
         //require(msg.value >= _price, "Ether sent is not enough");
+        if(_priceEnabled) {
+            require(msg.value >= _price, "Ether sent is not enough");
+        }
 
         Trusty trusty = new Trusty(_owners, _nTX);
         contracts.push(trusty);        
@@ -155,6 +159,15 @@ contract TrustyFactory is Ownable {
         uint256 newPrice = price;
         _price = newPrice;
         return _price;
+    }
+
+    /**
+    * @notice This method is used by the Trusty Factory's owner to toggle price activation
+    * @return bool Returns the new price configured
+    */
+    function trustyPriceEnable() public onlyOwner returns(bool) {
+        _priceEnabled = !_priceEnabled;
+        return _priceEnabled;
     }
 
     /**

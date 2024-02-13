@@ -75,6 +75,25 @@ describe("Trusty tests", async () => {
         });
     });
 
+    describe("Price enabler tests", async() => {
+        it("owner toggle price test", async () => {
+            await deployFactory();
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            const priceEnabled = await Factory.connect(accounts.owner).trustyPriceEnable();
+            const enabled = await Factory._priceEnabled();
+            expect(enabled).to.equal(true);
+        });
+
+        it("should revert toggle price from not owner", async () => {
+            await deployFactory();
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await expect(Factory.connect(accounts.randomAccount).trustyPriceEnable()).to.be.reverted;
+            await expect(Factory.connect(accounts.randomAccount).trustyPriceEnable()).to.be.revertedWith("Ownable: caller is not the owner");
+            const enabled = await Factory._priceEnabled();
+            expect(enabled).to.equal(false);
+        });
+    });
+
     describe("Create Trusty tests", async () => {
         it("create 2of3 test", async () => {
             await deployFactory()
@@ -183,7 +202,7 @@ describe("Trusty tests", async () => {
 
             await expect(Factory.createContract(owners,3,{value:0})).to.be.reverted
         });
-    })
+    });
 
     describe("Deposit to Trusty tests", async () => {
         it("send ether directly test", async () => {
@@ -216,7 +235,7 @@ describe("Trusty tests", async () => {
             await txDeposit.wait();
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
         })
-    })
+    });
 
     describe("Submit, confirm, execute transaction tests", async () =>{
         it("submit, confirm and execute a transaction proposal test", async () => {
@@ -641,7 +660,7 @@ describe("Trusty tests", async () => {
             await mine(1).then(async () => {})
         })
         */
-    })
+    });
 
     describe("Destroy tests", async () => {
         it("destroy trusty and withdraw funds test", async () => {
@@ -710,7 +729,7 @@ describe("Trusty tests", async () => {
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount)
         })
         
-    })
+    });
 
     // Tests without Factory intermediation
     describe("Deploy single Trusty without Factory interaction tests", async () => {
@@ -793,5 +812,5 @@ describe("Trusty tests", async () => {
 
             expect(txGet[3]).to.equal(true)
         });
-    })
+    });
 });
