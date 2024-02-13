@@ -17,7 +17,7 @@ let Factory = null;
 let Trusty = null;
 
 const ethDecimals = 10**18;
-const trustyPrice = ethers.utils.parseEther("0.10")
+const trustyPrice = ethers.utils.parseEther("0");
 
 /**
  * [Trusty Multisignature Contract]: 
