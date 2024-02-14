@@ -22,7 +22,7 @@ module.exports = {
   solidity: "0.8.13",
   gasReporter: {
     enabled: true,
-    //outputFile: "gas-report.txt",
+    //outputFile: "gas-report/gas-report.txt",
     noColors: false,
     currency: "EUR",
     coinmarketcap: COINMARKETCAP_API_KEY,
