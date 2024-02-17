@@ -5,7 +5,7 @@
 - Clone the repository and `cd` into it
 - Create a `.env` file and put in the environment variables (see `.env.template`).
 - It is recommended to insert in the `.env` the variable `PRIVATE_KEY` only when you need actually to deploy the contract on the network and removing it immediately after.
-- To run the smart contract locally remember to check and eventually rename the file `hardhat.config.js` into for example `hardhatBACKUP.config.js` and instead rename the file `hardhatLOCAL.config.js` to `hardhat.config.js` as it contains the right hardhat framework configurations to run locally instead of deploying the contract on the network.
+- To run the smart contract locally just use the command `npm run start`, but to 'deploy' on blockchain remember to check and eventually edit the file `hardhat.config.js` as it contains the right hardhat framework's configurations `/*commented*/` to run locally instead of deploying the contract on the network specified.
 
 ## Install, compile, run, deploy and verify
 
