@@ -98,7 +98,7 @@ const main = async () => {
   console.log("[ImOwner?] ",imOwner);
 
   // Propose to submit a tx from a Trusty
-  const txSend = await Contract.connect(owner).trustySubmit(0, other.address, 1, 0x00);
+  const txSend = await Contract.connect(owner).trustySubmit(0, other.address, 1, 0x00, 0);
   await txSend.wait();
 
   // Get Trusty txs status
