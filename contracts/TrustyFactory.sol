@@ -26,7 +26,7 @@ contract TrustyFactory is Ownable {
     uint256 public totalTrusty = 0;
 
     //  _price of one Trusty
-    uint256 public _price = 0.1 ether;
+    uint256 public _price = 0.05 ether;
     bool public _priceEnabled = false;
 
     // Map owners address array to Trusty index
@@ -163,7 +163,7 @@ contract TrustyFactory is Ownable {
 
     /**
     * @notice This method is used by the Trusty Factory's owner to toggle price activation
-    * @return bool Returns the new price configured
+    * @return bool Returns true or false
     */
     function trustyPriceEnable() public onlyOwner returns(bool) {
         _priceEnabled = !_priceEnabled;
