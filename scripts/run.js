@@ -21,7 +21,7 @@ const main = async () => {
   console.log(`[previousPrice]: ${previousPrice}`)
 
   // Owner sets the price
-  const setPrice = await Contract.trustyPriceConfig(ethers.utils.parseEther("0.02"));
+  const setPrice = await Contract.trustyPriceConfig(ethers.utils.parseEther("0.05"));
   console.log(`[setPrice tx hash]: ${JSON.stringify(setPrice.hash)}`)
   
   // Attempt to change the price from a not owner account
@@ -39,6 +39,9 @@ const main = async () => {
   
   // Get the addresses from signers' accounts
   const owners = [owner.address,randomAccount.address, other.address];
+
+  // WHITELIST
+  let whitelist = await Contract.connect(owner).addAddressToWhitelist([randomAccount.address,other.address]);
 
   // Create a Trusty multisignature
   const create = await Contract.createContract(owners, 2, {value:0}); //ethers.utils.parseEther("0.02")

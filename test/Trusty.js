@@ -243,6 +243,9 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
+            // WHITELIST
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
+
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -282,7 +285,7 @@ describe("Trusty tests", async () => {
         it("should revert execution of a transaction proposal already executed test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -328,7 +331,7 @@ describe("Trusty tests", async () => {
         it("should revert execution of a transaction proposal with more amount than balance test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -369,7 +372,7 @@ describe("Trusty tests", async () => {
         it("should revert a transaction proposal from not owner test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist([...owners,accounts.anonymous.address]);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -386,7 +389,7 @@ describe("Trusty tests", async () => {
         it("confirm a transaction proposal test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -416,7 +419,7 @@ describe("Trusty tests", async () => {
         it("should revert a transaction proposal already confirmed from the same caller test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -446,7 +449,7 @@ describe("Trusty tests", async () => {
         it("should revert confirmation of a transaction proposal from not owner test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist([...owners,accounts.anonymous.address]);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -475,7 +478,7 @@ describe("Trusty tests", async () => {
         it("revoke a transaction proposal test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -511,7 +514,7 @@ describe("Trusty tests", async () => {
         it("should revert the revoke of a transaction proposal from not owner test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist([...owners,accounts.anonymous.address]);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -547,7 +550,7 @@ describe("Trusty tests", async () => {
         it("execute a transaction proposal test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -587,7 +590,7 @@ describe("Trusty tests", async () => {
         it("should revert the execution of a transaction proposal with less confirmation than minimum test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
             const create = await Factory.createContract(owners, 3, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -623,7 +626,7 @@ describe("Trusty tests", async () => {
         it("should revert the execution of a transaction proposal from not owner test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist([...owners,accounts.anonymous.address]);
             const create = await Factory.createContract(owners, 2, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
