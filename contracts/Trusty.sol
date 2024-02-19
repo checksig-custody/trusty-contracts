@@ -29,6 +29,8 @@ contract Trusty {
     event RevokeConfirmation(address indexed owner, uint indexed txIndex);
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
 
+    error TimeLock(string err,int blockLeft);
+
     // Variable Slots
     address[] public owners;
     mapping(address => bool) public isOwner;
@@ -39,7 +41,10 @@ contract Trusty {
         uint value;
         bytes data;
         bool executed;
-        uint numConfirmations;        
+        uint numConfirmations;     
+        uint blockHeight;
+        uint timestamp;
+        uint timeLock;   
     }
 
     // mapping from tx index => owner => bool
@@ -96,7 +101,9 @@ contract Trusty {
     * @param _data Optional data field or calldata to another contract
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
-    function submitTransaction(address _to, uint _value, bytes memory _data) public onlyOwner {
+    function submitTransaction(address _to, uint _value, bytes memory _data,uint _timeLock) public onlyOwner {
+        require(block.number <= block.number + _timeLock + 0, "timeLock must be greater than current blockHeight + timeLock");
+
         uint txIndex = transactions.length;
 
         transactions.push(
@@ -105,7 +112,10 @@ contract Trusty {
                 value: _value,
                 data: _data,
                 executed: false,
-                numConfirmations: 0
+                numConfirmations: 0,
+                blockHeight: block.number,
+                timestamp: block.timestamp,
+                timeLock: _timeLock
             })
         );
 
@@ -137,7 +147,12 @@ contract Trusty {
             transaction.numConfirmations >= numConfirmationsRequired,
             "cannot execute tx due to number of confirmation required"
         );
-        
+
+        if (transaction.blockHeight + transaction.timeLock + 0 > block.number) {
+            int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
+            revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
+        }
+
         (bool success, ) = transaction.to.call{value: transaction.value}(
             //return abi.encodeWithSignature("callMe(uint256)", 123);
             //return abi.encodeWithSignature(transaction.data);
@@ -146,7 +161,7 @@ contract Trusty {
         require(success, "tx failed");
 
         transaction.executed = true;
-                
+        
         emit ExecuteTransaction(tx.origin, _txIndex);
     }
 
@@ -197,7 +212,7 @@ contract Trusty {
     * @param _txIndex The index of the transaction that needs to be retrieved
     * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations) {
+    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timeLock) {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
@@ -205,7 +220,9 @@ contract Trusty {
             transaction.value,
             transaction.data,
             transaction.executed,
-            transaction.numConfirmations
+            transaction.numConfirmations,
+            transaction.blockHeight,
+            transaction.timeLock
         );
     }
 
