@@ -5,7 +5,7 @@
  * Copyright (c) 2024 Ramzi Bougammoura
  */
 
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.24; // ^0.8.13
 
 //import "hardhat/console.sol";
 
@@ -225,10 +225,13 @@ contract Trusty {
 
     /**
     * @notice Method used by the owners to destroy the contract making it unusuable and withdrawing all the funds
+    * @custom: ``selfdestruct has been deprecated since Solidity 0.8.18
     */
+    /*
     function destroy() public onlyOwner {
         //selfdestruct(payable(address)) > address.send(this.balance);
         address _address = tx.origin;
         selfdestruct(payable(_address));
     }
+    */
 }

@@ -662,7 +662,8 @@ describe("Trusty tests", async () => {
         })
         */
     });
-
+    
+    /*
     describe("Destroy tests", async () => {
         it("destroy trusty and withdraw funds test", async () => {
             await deployFactory();
@@ -731,6 +732,7 @@ describe("Trusty tests", async () => {
         })
         
     });
+    */
 
     // Tests without Factory intermediation
     describe("Deploy single Trusty without Factory interaction tests", async () => {
