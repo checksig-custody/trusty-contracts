@@ -137,8 +137,6 @@ contract Trusty {
             transaction.numConfirmations >= numConfirmationsRequired,
             "cannot execute tx due to number of confirmation required"
         );
-
-        transaction.executed = true;
         
         (bool success, ) = transaction.to.call{value: transaction.value}(
             //return abi.encodeWithSignature("callMe(uint256)", 123);
@@ -146,7 +144,9 @@ contract Trusty {
             transaction.data
         );
         require(success, "tx failed");
-        
+
+        transaction.executed = true;
+                
         emit ExecuteTransaction(tx.origin, _txIndex);
     }
 
