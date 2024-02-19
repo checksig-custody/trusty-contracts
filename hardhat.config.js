@@ -24,7 +24,7 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 if(useLedger) {
   task("sign", "Signs a message with ledger", async (_, hre) => {
     const message =
-      "0x546F207369676E20796F752063616E2075736520796F7572204C6564676572212121";
+      "0x5b3078726d735d3a207468697320697320612074657374206d65737361676521";
     const account = ledgerAddress;
 
     const signature = await hre.network.provider.request({

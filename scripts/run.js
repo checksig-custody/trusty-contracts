@@ -1,7 +1,36 @@
 const { ethers } = require("hardhat");
 const { mine } = require("@nomicfoundation/hardhat-network-helpers");
+require("@nomicfoundation/hardhat-ledger");
+
+const useLedger = false;
+const ledgerAddress = ""
+
+function toHex(str) {
+  var result = '';
+  for (var i=0; i<str.length; i++) {
+    result += str.charCodeAt(i).toString(16);
+  }
+  return result;
+}
 
 const main = async () => {
+
+  if(useLedger){
+    const txt = toHex("");
+    //const message = `0x${txt}`
+    const message = "0x5b3078726d735d3a207468697320697320612074657374206d65737361676521";
+    const account = ledgerAddress;
+
+    const signature = await hre.network.provider.request({
+      method: "personal_sign",
+      params: [
+        message,
+        account,
+      ],
+    });
+
+    console.log("Signed message", message, "for Ledger account", account, "and got", signature);
+  }  
 
   // Get signers's account object from hardhat runtime environment.
   // By default, Contract instances are connected to the first signer.
