@@ -48,8 +48,12 @@ module.exports = {
   defaultNetwork: "hardhat",
   solidity: {
     version:"0.8.24",
-    optimizer: true,
-    runs: 200
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
   },
   gasReporter: {
     enabled: gasReport,

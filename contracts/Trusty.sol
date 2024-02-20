@@ -5,7 +5,7 @@
  * Copyright (c) 2024 Ramzi Bougammoura
  */
 
-pragma solidity ^0.8.24; // ^0.8.13
+pragma solidity ^0.8.24;
 
 //import "hardhat/console.sol";
 
@@ -52,6 +52,19 @@ contract Trusty {
 
     Transaction[] public transactions;
 
+    // whitelist
+    mapping(address => bool) public whitelistedToAddresses;
+    address[] public whitelistedAddressesList;
+    
+    uint8 public maxWhitelistedAddresses = 10;
+    uint8 public numAddressesWhitelisted = 0;
+
+    modifier notWhitelisted(address toAddress) {
+        //require(whitelistedToAddresses[toAddress]);
+        require(whitelistedToAddresses[toAddress], "Address not in whitelist!");
+        _;
+    }
+
     modifier onlyOwner() {
         require(isOwner[msg.sender] || isOwner[tx.origin], "not owner");
         _;
@@ -88,8 +101,17 @@ contract Trusty {
             require(!isOwner[owner], "owner not unique");
 
             isOwner[owner] = true;
+
+            //whitelistedToAddresses[owner] = true;
+            //whitelistedAddressesList.push(owner);
+
+            numAddressesWhitelisted++;
+
             owners.push(owner);
         }
+
+        whitelistedToAddresses[address(this)] = true;
+        whitelistedAddressesList.push(address(this));
 
         numConfirmationsRequired = _numConfirmationsRequired;
     }
@@ -101,9 +123,9 @@ contract Trusty {
     * @param _data Optional data field or calldata to another contract
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
-    function submitTransaction(address _to, uint _value, bytes memory _data,uint _timeLock) public onlyOwner {
+    function submitTransaction(address _to, uint _value, bytes memory _data, uint _timeLock) public onlyOwner notWhitelisted(_to) {
         require(block.number <= block.number + _timeLock + 0, "timeLock must be greater than current blockHeight + timeLock");
-
+        
         uint txIndex = transactions.length;
 
         transactions.push(
@@ -224,6 +246,61 @@ contract Trusty {
             transaction.blockHeight,
             transaction.timeLock
         );
+    }
+
+    /**
+    * @notice This method is used by the Trusty's owner to set a maximum number of whitelisted addresses
+    * @custom:owner Can be called by owner
+    */
+    function setMaxWhitelist(uint8 _maxWhitelistedAddresses) public onlyOwner {
+        maxWhitelistedAddresses =  _maxWhitelistedAddresses;
+    }
+
+    /**
+    * @notice This method is used by the Trusty's owner to get the whitelisted addresses
+    * @custom:owner Can be called by owner
+    */
+    function getWhitelist() public view onlyOwner returns(address[] memory) {
+        return whitelistedAddressesList;
+    }
+
+    /**
+    * @notice addAddressToWhitelist - This function adds the address of the sender to the whitelist
+    * @custom:param `address[]` An array of addresses to be whitelisted
+    * @custom:owner Can be called by owner
+    */
+    function addAddressToWhitelist(address[] memory addresses) public onlyOwner {
+        // check if the numAddressesWhitelisted < maxWhitelistedAddresses, if not then throw an error.
+        require(numAddressesWhitelisted < maxWhitelistedAddresses, "Whitelist limit reached");
+        
+        for (uint i = 0; i < addresses.length; i++) {
+            // Add the address which called the function to the whitelistedAddress array
+            whitelistedToAddresses[addresses[i]] = true;
+            whitelistedAddressesList.push(addresses[i]);
+            
+            // Increase the number of whitelisted addresses
+            numAddressesWhitelisted += 1;
+        }        
+    }
+
+    /**
+    * @notice removeAddressFromWhitelist - This function removes the address of the sender to the whitelist
+    * @custom:param `address[]` An array of addresses to be removed from whitelist
+    * @custom:owner Can be called by owner
+    */
+    function removeAddressFromWhitelist(address[] memory addresses) public onlyOwner {        
+        for (uint i = 0; i < addresses.length; i++) {
+            // Add the address which called the function to the whitelistedAddress array
+            whitelistedToAddresses[addresses[i]] = false;
+
+            for (uint j = 0; j < whitelistedAddressesList.length; j++) {
+                if (whitelistedAddressesList[j] == addresses[i]) {
+                    delete whitelistedAddressesList[j];
+                }
+            }
+            // Decrease the number of whitelisted addresses
+            numAddressesWhitelisted -= 1;
+        }        
     }
 
     /**

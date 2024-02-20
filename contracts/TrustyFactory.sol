@@ -5,7 +5,7 @@
  * Copyright (c) 2024 Ramzi Bougammoura
  */
 
-pragma solidity ^0.8.24; // ^0.8.13
+pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Trusty.sol";
@@ -29,17 +29,33 @@ contract TrustyFactory is Ownable {
     uint256 public _price = 0.05 ether;
     bool public _priceEnabled = false;
 
+    // whitelist
+    mapping(address => bool) public whitelistedAddresses;
+    uint8 public maxWhitelistedAddresses = 10;
+    uint8 public numAddressesWhitelisted = 0;
+
     // Map owners address array to Trusty index
     mapping(uint256 => address[]) public trustyOwner;
+
+    modifier notWhitelisted {
+        require(whitelistedAddresses[msg.sender] || whitelistedAddresses[tx.origin], "Not in the whitelist!");
+        _;
+    }
+
+    /**
+     * CONSTRUCTOR
+     */
+    constructor() {
+        whitelistedAddresses[msg.sender] = true;
+        numAddressesWhitelisted++;
+    }
 
     /**
     * @notice This method is used to create a Trusty multisignature
     * @param _owners Array of owners' addresses
     * @param _nTX Minimum number of confirmations required to execute a transaction
     */
-    function createContract(address[] memory _owners, uint _nTX) payable public {
-        // uncomment and add `payable` modifier to enable price
-        //require(msg.value >= _price, "Ether sent is not enough");
+    function createContract(address[] memory _owners, uint _nTX) payable public notWhitelisted {
         if(_priceEnabled) {
             require(msg.value >= _price, "Ether sent is not enough");
         }
@@ -119,7 +135,7 @@ contract TrustyFactory is Ownable {
     * @param _value The amount value of the proposed transaction
     * @param _data The data parameter can contains ordinary data or an encoded call to interact with another contract
     */
-    function trustySubmit(uint256 _contractIndex, address _to, uint256 _value, bytes memory _data, uint _timeLock) public {
+    function trustySubmit(uint256 _contractIndex, address _to, uint256 _value, bytes memory _data, uint _timeLock) public notWhitelisted {
         contracts[_contractIndex].submitTransaction(_to, _value, _data, _timeLock);
     }
     
@@ -128,7 +144,7 @@ contract TrustyFactory is Ownable {
     * @param _contractIndex The Trusty contract index that will be called
     * @param _txIndex The transaction index of the contract's index specified
     */
-    function trustyConfirm(uint256 _contractIndex, uint _txIndex) public {
+    function trustyConfirm(uint256 _contractIndex, uint _txIndex) public notWhitelisted {
         contracts[_contractIndex].confirmTransaction(_txIndex);
     }
 
@@ -137,7 +153,7 @@ contract TrustyFactory is Ownable {
     * @param _contractIndex The Trusty contract index that will be called
     * @param _txIndex The transaction index of the contract's index specified
     */
-    function trustyExecute(uint256 _contractIndex, uint _txIndex) public {
+    function trustyExecute(uint256 _contractIndex, uint _txIndex) public notWhitelisted {
         contracts[_contractIndex].executeTransaction(_txIndex);
     }
 
@@ -146,7 +162,7 @@ contract TrustyFactory is Ownable {
     * @param _contractIndex The Trusty contract index that will be called
     * @param _txIndex The transaction index of the contract's index specified
     */
-    function trustyRevoke(uint256 _contractIndex, uint _txIndex) public {
+    function trustyRevoke(uint256 _contractIndex, uint _txIndex) public notWhitelisted {
         contracts[_contractIndex].revokeConfirmation(_txIndex);
     }
     
@@ -168,6 +184,64 @@ contract TrustyFactory is Ownable {
     function trustyPriceEnable() public onlyOwner returns(bool) {
         _priceEnabled = !_priceEnabled;
         return _priceEnabled;
+    }
+
+    /**
+    * @notice This method is used by the Trusty's owner to get the whitelisted addresses
+    * @custom:owner Can be called by owner
+    */
+    function getTrustyWhitelist(uint256 _contractIndex) public view returns(address[] memory) {
+        return contracts[_contractIndex].getWhitelist();
+    }
+
+    /**
+    * @notice This method is used by the Trusty's owner to get the whitelisted addresses
+    * @custom:owner Can be called by owner
+    */
+    function addToTrustyWhitelist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
+        return contracts[_contractIndex].addAddressToWhitelist(addresses);
+    }
+
+    /**
+    * @notice This method is used by the Trusty Factory's owner to set a maximum number of whitelisted addresses
+    * @custom:owner Can be called by owner
+    */
+    function setMaxWhitelist(uint8 _maxWhitelistedAddresses) public onlyOwner {
+        maxWhitelistedAddresses =  _maxWhitelistedAddresses;
+    }
+
+    /**
+    * @notice addAddressToWhitelist - This function adds the address of the sender to the whitelist
+    * @custom:param `address[]` An array of addresses to be whitelisted
+    * @custom:owner Can be called by owner
+    */
+    function addAddressToWhitelist(address[] memory addresses) public onlyOwner {
+        // check if the numAddressesWhitelisted < maxWhitelistedAddresses, if not then throw an error.
+        require(numAddressesWhitelisted < maxWhitelistedAddresses, "Whitelist limit reached");
+        
+        for (uint i = 0; i < addresses.length; i++) {
+            // Add the address which called the function to the whitelistedAddress array
+            whitelistedAddresses[addresses[i]] = true;
+            
+            // Increase the number of whitelisted addresses
+            numAddressesWhitelisted += 1;
+        }        
+    }
+
+    /**
+    * @notice removeAddressFromWhitelist - This function removes the address of the sender to the whitelist
+    * @custom:param `address[]` An array of addresses to be removed from whitelist
+    * @custom:owner Can be called by owner
+    */
+    function removeAddressFromWhitelist(address[] memory addresses) public onlyOwner {
+        
+        for (uint i = 0; i < addresses.length; i++) {
+            // Add the address which called the function to the whitelistedAddress array
+            whitelistedAddresses[addresses[i]] = false;
+            
+            // Increase the number of whitelisted addresses
+            numAddressesWhitelisted -= 1;
+        }        
     }
 
     /**
