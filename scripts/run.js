@@ -133,8 +133,6 @@ const main = async () => {
 
   const getWhitelist = await Contract.connect(owner).getTrustyWhitelist(0)
 
-  console.table(getWhitelist)
-
   // Propose to submit a tx from a Trusty
   const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, 0x00, 0);
   await txSend.wait();
