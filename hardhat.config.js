@@ -21,9 +21,13 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 module.exports = {
   defaultNetwork: "hardhat",
   solidity: {
-    version:"0.8.13",
-    optimizer: true,
-    runs: 200
+    version:"0.8.24",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200
+      }
+    }
   },
   gasReporter: {
     enabled: true,

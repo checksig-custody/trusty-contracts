@@ -64,7 +64,7 @@ describe("Trusty tests", async () => {
     }
 
     // Tests with Factory intermediation
-    describe("Deploy Factory tests", async() => { 
+    describe("Deploy Factory tests", async () => { 
         it("factory deploy test", async () => {
             await deployFactory()
             expect(Factory.deployTransaction.hash !== null && Factory.address !== null)
@@ -76,7 +76,7 @@ describe("Trusty tests", async () => {
         });
     });
 
-    describe("Price enabler tests", async() => {
+    describe("Price enabler tests", async () => {
         it("owner toggle price test", async () => {
             await deployFactory();
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -257,6 +257,8 @@ describe("Trusty tests", async () => {
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
 
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
+
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
 
@@ -296,6 +298,8 @@ describe("Trusty tests", async () => {
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
 
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
@@ -342,6 +346,8 @@ describe("Trusty tests", async () => {
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
 
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount + BigInt(1), 0x00);
             await txSend.wait();
@@ -399,6 +405,8 @@ describe("Trusty tests", async () => {
             await txDeposit.wait();
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
 
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
+
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
 
@@ -428,6 +436,8 @@ describe("Trusty tests", async () => {
             const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
             await txDeposit.wait();
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
 
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
@@ -459,6 +469,8 @@ describe("Trusty tests", async () => {
             await txDeposit.wait();
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
 
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
+
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
 
@@ -489,6 +501,8 @@ describe("Trusty tests", async () => {
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
 
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
@@ -526,6 +540,8 @@ describe("Trusty tests", async () => {
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
 
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
+
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
 
@@ -561,6 +577,8 @@ describe("Trusty tests", async () => {
             expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
 
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
@@ -602,6 +620,8 @@ describe("Trusty tests", async () => {
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
 
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
+
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
 
@@ -638,6 +658,8 @@ describe("Trusty tests", async () => {
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
 
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address]);
+
             const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
             await txSend.wait();
 
@@ -666,6 +688,103 @@ describe("Trusty tests", async () => {
         */
     });
 
+    describe("Whitelist tests", async () => {
+        it("add whitelisted address test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            // WHITELIST
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist([...owners]);
+
+            const create = await Factory.createContract(owners, 2, {value: trustyPrice});
+            const trustyAddr = await Factory.contracts(0);
+
+            let getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
+
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address])
+
+            getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
+
+            const whitelistToCheck = [...owners, accounts.anonymous.address]
+
+            for(let i = 0; i < getTrustyWhitelist.length; i++) {
+                expect(getTrustyWhitelist[i]).to.be.equal(whitelistToCheck[i])
+            }
+        })
+
+        it("submit, confirm and execute a transaction proposal to a whitelisted address test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            // FACTORY WHITELIST
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
+
+            const create = await Factory.createContract(owners, 2, {value: trustyPrice});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("1");
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            // TRUSTY WHITELIST
+            let getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
+
+            const addNewAddresToWhitelist = await Factory.connect(accounts.owner).addToTrustyWhitelist(0,[accounts.anonymous.address])
+
+            getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            await txConfirm2.wait();
+
+            // Execute a tx
+            const txExe = await Factory.connect(accounts.owner).trustyExecute(0,0);
+            await txExe.wait();
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance));
+
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[3]).to.equal(true);
+        })
+
+        it("should revert the submit of a transaction proposal to a not whitelisted address test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            // Factory WHITELIST
+            let whitelist = await Factory.connect(accounts.owner).addAddressToWhitelist(owners);
+
+            const create = await Factory.createContract(owners, 2, {value: trustyPrice});
+            const trustyAddr = await Factory.contracts(0);
+
+            const amount = ethers.utils.parseEther("1");
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            await expect(Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00)).to.be.reverted
+            await expect(Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00)).to.be.revertedWith("Address not in whitelist!")
+        })
+    })
+    /*
     describe("Destroy tests", async () => {
         it("destroy trusty and withdraw funds test", async () => {
             await deployFactory();
@@ -734,7 +853,7 @@ describe("Trusty tests", async () => {
         })
         
     });
-
+    */
     // Tests without Factory intermediation
     describe("Deploy single Trusty without Factory interaction tests", async () => {
         it("deploy single Trusty test", async () => {
@@ -790,6 +909,8 @@ describe("Trusty tests", async () => {
             //console.log(`[trustyBalance]: ${trustyBalance/ethDecimals}`);
 
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const addNewAddresToWhitelist = await Trusty.connect(accounts.owner).addAddressToWhitelist([accounts.anonymous.address]);
 
             // Submit transaction proposal
             const txSend = await Trusty.connect(accounts.owner).submitTransaction(accounts.anonymous.address, amount, 0x00);

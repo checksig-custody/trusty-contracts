@@ -5,7 +5,7 @@ const main = async () => {
 
   // Get signers's account object from hardhat runtime environment.
   // By default, Contract instances are connected to the first signer.
-  const [owner, randomAccount, other] = await hre.ethers.getSigners();
+  const [owner, randomAccount, other, anonymous] = await hre.ethers.getSigners();
 
   // Get the contract's code to be deployed from `contracts/TrustyFactory.sol`
   const ContractFactory = await hre.ethers.getContractFactory("TrustyFactory");
@@ -100,8 +100,14 @@ const main = async () => {
   const imOwner = await Contract.imOwner(0);
   console.log("[ImOwner?] ",imOwner);
 
+  const setWhitelist = await Contract.connect(owner).addToTrustyWhitelist(0,[anonymous.address]);
+
+  const getWhitelist = await Contract.connect(owner).getTrustyWhitelist(0)
+
+  console.table(getWhitelist)
+
   // Propose to submit a tx from a Trusty
-  const txSend = await Contract.connect(owner).trustySubmit(0, other.address, 1, 0x00);
+  const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, 0x00);
   await txSend.wait();
 
   // Get Trusty txs status
