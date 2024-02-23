@@ -61,7 +61,7 @@ contract Trusty {
 
     modifier notWhitelisted(address toAddress) {
         //require(whitelistedToAddresses[toAddress]);
-        require(whitelistedToAddresses[toAddress], "Address not in whitelist!");
+        require(whitelistedToAddresses[toAddress], "Address not in Trusty Whitelist!");
         _;
     }
 

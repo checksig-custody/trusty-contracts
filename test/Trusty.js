@@ -875,7 +875,7 @@ describe("Trusty tests", async () => {
             const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
 
             await expect(Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0)).to.be.reverted
-            await expect(Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0)).to.be.revertedWith("Address not in whitelist!")
+            await expect(Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0)).to.be.revertedWith("Address not in Trusty Whitelist!")
         })
     })
     /*

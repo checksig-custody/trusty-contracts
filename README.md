@@ -33,6 +33,9 @@ npm run deploy <goerli>|<sepolia>|<mumbai>
 
 # Deploy on Mainnet
 npm run deploy mainnet
+
+# Verify contract
+npm run verify mainnet <Contract_Address> "ConstructorArg1" "ConstructorArg2"
 ```
 
 ## Scripts commands shortcut

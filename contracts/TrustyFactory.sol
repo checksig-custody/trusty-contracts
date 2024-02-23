@@ -38,7 +38,7 @@ contract TrustyFactory is Ownable {
     mapping(uint256 => address[]) public trustyOwner;
 
     modifier notWhitelisted {
-        require(whitelistedAddresses[msg.sender] || whitelistedAddresses[tx.origin], "Not in the whitelist!");
+        require(whitelistedAddresses[msg.sender] || whitelistedAddresses[tx.origin], "Not in the Factory Whitelist!");
         _;
     }
 
