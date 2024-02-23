@@ -2,14 +2,18 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-ledger");
 require("dotenv").config({ path: ".env" });
 
-const {INFURA_API_KEY, COINMARKETCAP_API_KEY, ETHERSCAN_API_KEY, QUICKNODE_HTTP_URL, PRIVATE_KEY, MNEMONIC, PASSPHRASE} = process.env;
+var prompt = require('prompt-sync')();
+
+//const input = prompt('Would you like to use HW Ledger? [y]')==="y"?true:false
+
+const {INFURA_API_KEY, COINMARKETCAP_API_KEY, ETHERSCAN_API_KEY, QUICKNODE_HTTP_URL, PRIVATE_KEY, LEDGER_ADDRESS, MNEMONIC, PASSPHRASE} = process.env;
 
 const gasReport = true;
 const gasPrice = 20;
 
 // Set to `true` and insert the `ledgerAddress` that will be used to deploy 
-const useLedger = false;
-const ledgerAddress = ""
+const useLedger = false; //input
+const ledgerAddress = LEDGER_ADDRESS;
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -62,7 +66,7 @@ module.exports = {
     noColors: false,
     currency: "EUR",
     coinmarketcap: COINMARKETCAP_API_KEY,
-    gasPriceApi: ETHERSCAN_API_KEY,
+    //gasPriceApi: ETHERSCAN_API_KEY,
     token: "ETH"
   },
   etherscan: {
@@ -84,6 +88,24 @@ module.exports = {
         // }
       }
     },
+    sepolia: {
+      url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
+      //accounts: [PRIVATE_KEY],
+      ledgerAccounts: useLedger?[
+        ledgerAddress
+      ]:[],
+    },
+    goerli: {
+      url: `https://goerli.infura.io/v3/${INFURA_API_KEY}`,
+      //accounts: [PRIVATE_KEY],
+      ledgerAccounts: useLedger?[
+        ledgerAddress
+      ]:[],
+    },
+    mumbai: {
+      url: QUICKNODE_HTTP_URL,
+      //accounts: [PRIVATE_KEY],
+		},
     // Uncomment when you need to deploy and there is a PRIVATE_KEY in .env file
     /*
     mainnet: {
@@ -96,19 +118,10 @@ module.exports = {
         count: 20,
         passphrase: PASSPHRASE + ""
       },
-    },
-    goerli: {
-      url: `https://goerli.infura.io/v3/${INFURA_API_KEY}`,
-      accounts: [PRIVATE_KEY],
-    },
-    sepolia: {
-      url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
-      accounts: [PRIVATE_KEY],
-    },
-    mumbai: {
-      url: QUICKNODE_HTTP_URL,
-      accounts: [PRIVATE_KEY],
-		},
+      ledgerAccounts: useLedger?[
+        ledgerAddress
+      ]:[],
+    },    
     */
   }
 };

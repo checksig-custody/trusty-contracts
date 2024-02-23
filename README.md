@@ -18,19 +18,21 @@ cd trusty-contracts
 
 # Install dependencies
 npm i
+
+# Update dependencies
 npm update
 
-# Compile contract bytecode
-npx hardhat compile
+# Start
+npm run start
 
-# Run contract locally
-npx hardhat run scripts/run.js
+# Deploy locally
+npm run deploy hardhat
 
-# Deploy contract to <network>=goerli/sepolia/mumbai
-npx hardhat run scripts/deploy.js --network mainnet 
+# Deploy on Testnets
+npm run deploy <goerli>|<sepolia>|<mumbai>
 
-# Verify contract on <network>=goerli/sepolia/mumbai
-npx hardhat verify --network goerli 0xabcdef12345... "ConstructorArg1" "ConstructorArg2" 
+# Deploy on Mainnet
+npm run deploy mainnet
 ```
 
 ## Scripts commands shortcut
@@ -43,7 +45,7 @@ npm run compile
 npm run start
 
 # Deploy
-npm run deploy
+npm run deploy 
 ```
 
 ## Integration tests
@@ -66,8 +68,26 @@ npm run test-id -- 'Create trusty test'
 
 ```shell
 npx hardhat help
+
+# Run a local node
+npx hardhat node
+
+# Test
 npx hardhat test
 REPORT_GAS=true npx hardhat test
-npx hardhat node
+
+# Compile contract bytecode
+npx hardhat compile
+
+# Run contract locally
+npx hardhat run scripts/run.js
+
+# Deploy
 npx hardhat run scripts/deploy.js
+
+# Deploy contract to <network>=goerli/sepolia/mumbai
+npx hardhat run scripts/deploy.js --network mainnet 
+
+# Verify contract on <network>=goerli/sepolia/mumbai
+npx hardhat verify --network goerli 0xabcdef12345... "ConstructorArg1" "ConstructorArg2" 
 ```

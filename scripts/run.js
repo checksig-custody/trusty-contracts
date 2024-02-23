@@ -1,9 +1,13 @@
 const { ethers } = require("hardhat");
 const { mine } = require("@nomicfoundation/hardhat-network-helpers");
 require("@nomicfoundation/hardhat-ledger");
+require("dotenv").config({ path: ".env" });
+
+const {PRIVATE_KEY, LEDGER_ADDRESS, MNEMONIC, PASSPHRASE} = process.env;
+
 
 const useLedger = false;
-const ledgerAddress = ""
+const ledgerAddress = LEDGER_ADDRESS;
 
 function toHex(str) {
   var result = '';
@@ -70,7 +74,7 @@ const main = async () => {
   const owners = [owner.address,randomAccount.address, other.address];
 
   // WHITELIST
-  let whitelist = await Contract.connect(owner).addAddressToWhitelist([randomAccount.address,other.address]);
+  let whitelist = await Contract.connect(owner).addToFactoryWhitelist([randomAccount.address,other.address]);
 
   // Create a Trusty multisignature
   const create = await Contract.createContract(owners, 2, {value:0}); //ethers.utils.parseEther("0.02")

@@ -102,16 +102,16 @@ contract Trusty {
 
             isOwner[owner] = true;
 
+            // Owners Auto-whitelisting
             //whitelistedToAddresses[owner] = true;
             //whitelistedAddressesList.push(owner);
-
-            numAddressesWhitelisted++;
 
             owners.push(owner);
         }
 
-        whitelistedToAddresses[address(this)] = true;
-        whitelistedAddressesList.push(address(this));
+        // Trusty Auto-Whitelist
+        //whitelistedToAddresses[address(this)] = true;
+        //whitelistedAddressesList.push(address(this));
 
         numConfirmationsRequired = _numConfirmationsRequired;
     }

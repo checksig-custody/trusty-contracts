@@ -31,7 +31,7 @@ contract TrustyFactory is Ownable {
 
     // whitelist
     mapping(address => bool) public whitelistedAddresses;
-    uint8 public maxWhitelistedAddresses = 10;
+    uint8 public maxWhitelistedAddresses = 100;
     uint8 public numAddressesWhitelisted = 0;
 
     // Map owners address array to Trusty index
@@ -61,7 +61,15 @@ contract TrustyFactory is Ownable {
         }
 
         Trusty trusty = new Trusty(_owners, _nTX);
-        contracts.push(trusty);        
+        contracts.push(trusty);
+
+        whitelistedAddresses[address(trusty)] = true;
+        numAddressesWhitelisted++;
+
+        for (uint i = 0; i < _owners.length; i++) {
+            whitelistedAddresses[_owners[i]] = true;
+            numAddressesWhitelisted++;
+        }
 
         trustyOwner[totalTrusty] = _owners;
 
@@ -195,11 +203,38 @@ contract TrustyFactory is Ownable {
     }
 
     /**
-    * @notice This method is used by the Trusty's owner to get the whitelisted addresses
+    * @notice This method is used by the Trusty's owner to update the whitelisted addresses
     * @custom:owner Can be called by owner
     */
     function addToTrustyWhitelist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
         return contracts[_contractIndex].addAddressToWhitelist(addresses);
+    }
+
+    /**
+    * @notice This method is used by the Trusty's owner to update the whitelisted addresses
+    * @custom:owner Can be called by owner
+    */
+    function removeFromTrustyWhitelist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
+        return contracts[_contractIndex].removeAddressFromWhitelist(addresses);
+    }
+
+    /**
+    * @notice This method is used to be whitelisted by Factory to the services
+    * @custom:payable Require `_price`
+    */
+    function whitelistMe() public payable {
+        // check if the numAddressesWhitelisted < maxWhitelistedAddresses, if not then throw an error.
+        require(numAddressesWhitelisted < maxWhitelistedAddresses, "Whitelist limit reached");
+
+        if(_priceEnabled) {
+            require(msg.value >= _price, "Ether sent is not enough");
+        }
+        // Add the address which called the function to the whitelistedAddress array
+        whitelistedAddresses[msg.sender] = true;
+        
+        // Increase the number of whitelisted addresses
+        numAddressesWhitelisted += 1;
+        //return contracts[_contractIndex].removeAddressFromWhitelist(addresses);
     }
 
     /**
@@ -211,11 +246,11 @@ contract TrustyFactory is Ownable {
     }
 
     /**
-    * @notice addAddressToWhitelist - This function adds the address of the sender to the whitelist
+    * @notice addToFactoryWhitelist - This function adds the address to the Factory Whitelist
     * @custom:param `address[]` An array of addresses to be whitelisted
     * @custom:owner Can be called by owner
     */
-    function addAddressToWhitelist(address[] memory addresses) public onlyOwner {
+    function addToFactoryWhitelist(address[] memory addresses) public onlyOwner {
         // check if the numAddressesWhitelisted < maxWhitelistedAddresses, if not then throw an error.
         require(numAddressesWhitelisted < maxWhitelistedAddresses, "Whitelist limit reached");
         
@@ -229,11 +264,11 @@ contract TrustyFactory is Ownable {
     }
 
     /**
-    * @notice removeAddressFromWhitelist - This function removes the address of the sender to the whitelist
+    * @notice removeFromFactoryWhitelist - This function removes the address from the Factory Whitelist
     * @custom:param `address[]` An array of addresses to be removed from whitelist
     * @custom:owner Can be called by owner
     */
-    function removeAddressFromWhitelist(address[] memory addresses) public onlyOwner {
+    function removeFromFactoryWhitelist(address[] memory addresses) public onlyOwner {
         
         for (uint i = 0; i < addresses.length; i++) {
             // Add the address which called the function to the whitelistedAddress array

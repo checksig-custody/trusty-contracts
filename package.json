@@ -6,7 +6,8 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "start": "npx hardhat run scripts/run.js",
-    "deploy": "npx hardhat run scripts/deploy.js --network sepolia",
+    "deploy": "npx hardhat run scripts/deploy.js --network",
+    "deploy-single": "npx hardhat run scripts/deploySingle.js --network",
     "test": "hardhat test",
     "test-id": "hardhat test --grep",
     "test-gas": "REPORT_GAS=true npx hardhat test",
@@ -16,13 +17,14 @@
   "author": "Ramzi Bougammoura",
   "license": "MIT",
   "devDependencies": {
+    "@nomicfoundation/hardhat-ledger": "^1.0.2",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
     "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "@nomicfoundation/hardhat-ledger": "^1.0.2",
     "hardhat": "^2.13.0"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.8.0",
-    "dotenv": "^16.0.3"
+    "dotenv": "^16.0.3",
+    "prompt-sync": "^4.2.0"
   }
 }
