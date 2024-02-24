@@ -2,9 +2,9 @@ const { ethers } = require("hardhat");
 const { mine } = require("@nomicfoundation/hardhat-network-helpers");
 require("@nomicfoundation/hardhat-ledger");
 require("dotenv").config({ path: ".env" });
+const prompt = require('prompt-sync')();
 
 const {PRIVATE_KEY, LEDGER_ADDRESS, MNEMONIC, PASSPHRASE} = process.env;
-
 
 const useLedger = false;
 const ledgerAddress = LEDGER_ADDRESS;

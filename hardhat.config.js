@@ -2,9 +2,12 @@ require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-ledger");
 require("dotenv").config({ path: ".env" });
 
-var prompt = require('prompt-sync')();
+const prompt = require('prompt-sync')();
 
-//const input = prompt('Would you like to use HW Ledger? [y]')==="y"?true:false
+let input = false
+if(process.argv.length === 2 && process.argv[1].includes("scripts/deploy.js") || process.argv[1].includes("scripts/deploySingle.js")){
+  input = prompt('Would you like to use HW Ledger? [y] or [press any button] to skip: ')==="y"?true:false;
+}
 
 const {INFURA_API_KEY, COINMARKETCAP_API_KEY, ETHERSCAN_API_KEY, QUICKNODE_HTTP_URL, PRIVATE_KEY, LEDGER_ADDRESS, MNEMONIC, PASSPHRASE} = process.env;
 
@@ -12,7 +15,7 @@ const gasReport = true;
 const gasPrice = 20;
 
 // Set to `true` and insert the `ledgerAddress` that will be used to deploy 
-const useLedger = false; //input
+const useLedger = input;
 const ledgerAddress = LEDGER_ADDRESS;
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -48,80 +51,140 @@ if(useLedger) {
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-module.exports = {
-  defaultNetwork: "hardhat",
-  solidity: {
-    version:"0.8.24",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      }
-    }
-  },
-  gasReporter: {
-    enabled: gasReport,
-    //gasPrice: gasPrice,
-    //outputFile: "gas-report/gas-report.txt",
-    noColors: false,
-    currency: "EUR",
-    coinmarketcap: COINMARKETCAP_API_KEY,
-    //gasPriceApi: ETHERSCAN_API_KEY,
-    token: "ETH"
-  },
-  etherscan: {
-    apiKey: ETHERSCAN_API_KEY
-  },
-  networks: {
-    localhost: {
-      url: "https://127.0.0.1:8545"
-    },
-    hardhat: {
-      ledgerAccounts: useLedger?[
-        ledgerAddress
-      ]:[],
-      mining: {
-        auto: true,
-        //interval: 3000,
-        // mempool: {
-        //   order: "fifo"
-        // }
+if(useLedger) {
+  module.exports = {
+    defaultNetwork: "hardhat",
+    solidity: {
+      version:"0.8.24",
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200
+        }
       }
     },
-    sepolia: {
-      url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
-      //accounts: [PRIVATE_KEY],
-      ledgerAccounts: useLedger?[
-        ledgerAddress
-      ]:[],
+    gasReporter: {
+      enabled: gasReport,
+      //gasPrice: gasPrice,
+      //outputFile: "gas-report/gas-report.txt",
+      noColors: false,
+      currency: "EUR",
+      coinmarketcap: COINMARKETCAP_API_KEY,
+      //gasPriceApi: ETHERSCAN_API_KEY,
+      token: "ETH"
     },
-    goerli: {
-      url: `https://goerli.infura.io/v3/${INFURA_API_KEY}`,
-      //accounts: [PRIVATE_KEY],
-      ledgerAccounts: useLedger?[
-        ledgerAddress
-      ]:[],
+    etherscan: {
+      apiKey: ETHERSCAN_API_KEY
     },
-    mumbai: {
-      url: QUICKNODE_HTTP_URL,
-      //accounts: [PRIVATE_KEY],
-		},
-    // Uncomment when you need to deploy and there is a PRIVATE_KEY in .env file
-    /*
-    mainnet: {
-      chainId: 1,
-      url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
-      accounts: {
-        mnemonic: MNEMONIC,
-        path: "m/44'/60'/0'/0",
-        initialIndex: 0,
-        count: 20,
-        passphrase: PASSPHRASE + ""
+    networks: {
+      localhost: {
+        url: "https://127.0.0.1:8545"
       },
-      ledgerAccounts: useLedger?[
-        ledgerAddress
-      ]:[],
-    },    
-    */
-  }
-};
+      hardhat: {
+        ledgerAccounts: useLedger?[
+          ledgerAddress
+        ]:[],
+        mining: {
+          auto: true,
+          //interval: 3000,
+          // mempool: {
+          //   order: "fifo"
+          // }
+        }
+      },
+      sepolia: {
+        url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
+        ledgerAccounts: useLedger?[
+          ledgerAddress
+        ]:[],
+      },
+      goerli: {
+        url: `https://goerli.infura.io/v3/${INFURA_API_KEY}`,
+        ledgerAccounts: useLedger?[
+          ledgerAddress
+        ]:[],
+      },
+      mumbai: {
+        url: QUICKNODE_HTTP_URL,
+        ledgerAccounts: useLedger?[
+          ledgerAddress
+        ]:[],
+      },
+      // Uncomment when you need to deploy and there is a PRIVATE_KEY in .env file
+      mainnet: {
+        chainId: 1,
+        url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
+        ledgerAccounts: useLedger?[
+          ledgerAddress
+        ]:[],
+      },
+    }
+  };
+} else {
+  module.exports = {
+    defaultNetwork: "hardhat",
+    solidity: {
+      version:"0.8.24",
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200
+        }
+      }
+    },
+    gasReporter: {
+      enabled: gasReport,
+      //gasPrice: gasPrice,
+      //outputFile: "gas-report/gas-report.txt",
+      noColors: false,
+      currency: "EUR",
+      coinmarketcap: COINMARKETCAP_API_KEY,
+      //gasPriceApi: ETHERSCAN_API_KEY,
+      token: "ETH"
+    },
+    etherscan: {
+      apiKey: ETHERSCAN_API_KEY
+    },
+    networks: {
+      localhost: {
+        url: "https://127.0.0.1:8545"
+      },
+      hardhat: {
+        mining: {
+          auto: true,
+          //interval: 3000,
+          // mempool: {
+          //   order: "fifo"
+          // }
+        }
+      },
+      sepolia: {
+        url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
+        //accounts: [PRIVATE_KEY],
+      },
+      goerli: {
+        url: `https://goerli.infura.io/v3/${INFURA_API_KEY}`,
+        //accounts: [PRIVATE_KEY],
+      },
+      mumbai: {
+        url: QUICKNODE_HTTP_URL,
+        //accounts: [PRIVATE_KEY],
+      },
+      // Uncomment when you need to deploy and there is a PRIVATE_KEY in .env file
+      /*
+      mainnet: {
+        chainId: 1,
+        url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
+        //accounts: [PRIVATE_KEY],
+        accounts: {
+          mnemonic: MNEMONIC,
+          path: "m/44'/60'/0'/0",
+          initialIndex: 0,
+          count: 20,
+          passphrase: PASSPHRASE + ""
+        },
+      },    
+      */
+    }
+  };
+}

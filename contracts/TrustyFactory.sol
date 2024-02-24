@@ -81,7 +81,7 @@ contract TrustyFactory is Ownable {
     * @param _contractIndex The Trusty contract index that will be funded
     * @param _amount Amount of ether to send
     */
-    function depositContract(uint256 _contractIndex, uint _amount) public payable {
+    function depositContract(uint256 _contractIndex, uint _amount) public payable notWhitelisted {
         (bool success, ) = payable(contracts[_contractIndex]).call{value: _amount}("");
         require(success, "failed deposit to trusty"); // revert forced
     }
@@ -173,30 +173,20 @@ contract TrustyFactory is Ownable {
     function trustyRevoke(uint256 _contractIndex, uint _txIndex) public notWhitelisted {
         contracts[_contractIndex].revokeConfirmation(_txIndex);
     }
-    
-    /**
-    * @notice This method is used by the Trusty Factory's owner to set a price for the creation of a Trusty
-    * @param price The new price that will override the previous one
-    * @return uint256 Returns the new price configured
-    */
-    function trustyPriceConfig(uint256 price) public onlyOwner returns(uint256) {
-        uint256 newPrice = price;
-        _price = newPrice;
-        return _price;
-    }
 
     /**
-    * @notice This method is used by the Trusty Factory's owner to toggle price activation
-    * @return bool Returns true or false
+    * @notice This method is used by the Trusty's owner to set a maximum number of whitelisted addresses
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param _maxWhitelistedAddresses The number of maximum addresses that can be whitelisted
     */
-    function trustyPriceEnable() public onlyOwner returns(bool) {
-        _priceEnabled = !_priceEnabled;
-        return _priceEnabled;
+    function setTrustyMaxWhitelist(uint256 _contractIndex, uint8 _maxWhitelistedAddresses) public notWhitelisted {
+        return contracts[_contractIndex].setMaxWhitelist(_maxWhitelistedAddresses);
     }
 
     /**
     * @notice This method is used by the Trusty's owner to get the whitelisted addresses
-    * @custom:owner Can be called by owner
+    * @param _contractIndex The Trusty contract index that will be called
+    * @return address[] Returns an array of whitelisted addresses
     */
     function getTrustyWhitelist(uint256 _contractIndex) public view returns(address[] memory) {
         return contracts[_contractIndex].getWhitelist();
@@ -204,7 +194,8 @@ contract TrustyFactory is Ownable {
 
     /**
     * @notice This method is used by the Trusty's owner to update the whitelisted addresses
-    * @custom:owner Can be called by owner
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param addresses An array of addresses to be whitelisted
     */
     function addToTrustyWhitelist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
         return contracts[_contractIndex].addAddressToWhitelist(addresses);
@@ -212,7 +203,8 @@ contract TrustyFactory is Ownable {
 
     /**
     * @notice This method is used by the Trusty's owner to update the whitelisted addresses
-    * @custom:owner Can be called by owner
+    * @param _contractIndex The Trusty contract index that will be called
+    * @param addresses An array of addresses to be removed from whitelist
     */
     function removeFromTrustyWhitelist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
         return contracts[_contractIndex].removeAddressFromWhitelist(addresses);
@@ -239,7 +231,8 @@ contract TrustyFactory is Ownable {
 
     /**
     * @notice This method is used by the Trusty Factory's owner to set a maximum number of whitelisted addresses
-    * @custom:owner Can be called by owner
+    * @param _maxWhitelistedAddresses The number of total allowed whitelisted addresses
+    * @custom:owner Can be called by Factory owner
     */
     function setMaxWhitelist(uint8 _maxWhitelistedAddresses) public onlyOwner {
         maxWhitelistedAddresses =  _maxWhitelistedAddresses;
@@ -248,7 +241,7 @@ contract TrustyFactory is Ownable {
     /**
     * @notice addToFactoryWhitelist - This function adds the address to the Factory Whitelist
     * @custom:param `address[]` An array of addresses to be whitelisted
-    * @custom:owner Can be called by owner
+    * @custom:owner Can be called by Factory owner
     */
     function addToFactoryWhitelist(address[] memory addresses) public onlyOwner {
         // check if the numAddressesWhitelisted < maxWhitelistedAddresses, if not then throw an error.
@@ -266,7 +259,7 @@ contract TrustyFactory is Ownable {
     /**
     * @notice removeFromFactoryWhitelist - This function removes the address from the Factory Whitelist
     * @custom:param `address[]` An array of addresses to be removed from whitelist
-    * @custom:owner Can be called by owner
+    * @custom:owner Can be called by Factory owner
     */
     function removeFromFactoryWhitelist(address[] memory addresses) public onlyOwner {
         
@@ -280,7 +273,30 @@ contract TrustyFactory is Ownable {
     }
 
     /**
+    * @notice This method is used by the Trusty Factory's owner to set a price for the creation of a Trusty
+    * @param price The new price that will override the previous one
+    * @return uint256 Returns the new price configured
+    * @custom:owner Can be called by Factory owner
+    */
+    function trustyPriceConfig(uint256 price) public onlyOwner returns(uint256) {
+        uint256 newPrice = price;
+        _price = newPrice;
+        return _price;
+    }
+
+    /**
+    * @notice This method is used by the Trusty Factory's owner to toggle price activation
+    * @return bool Returns true or false
+    * @custom:owner Can be called by Factory owner
+    */
+    function trustyPriceEnable() public onlyOwner returns(bool) {
+        _priceEnabled = !_priceEnabled;
+        return _priceEnabled;
+    }
+
+    /**
     * @notice This method is used by the Trusty Factory's owner to withdraw any amount deposited in the Factory
+    * @custom:owner Can be called by Factory owner
     * @dev withdraw and sends all the ethers in the contract
     */
     function withdraw() public onlyOwner {

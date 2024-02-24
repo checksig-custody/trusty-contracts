@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
 
-var prompt = require('prompt-sync')();
+const prompt = require('prompt-sync')();
 
 async function main() {
   const confirmations = parseInt(prompt('How many confirmations are required for the Trusty? '));
@@ -26,6 +26,11 @@ async function main() {
   so exchangeContract here is a factory for instances of our Exchange contract.
   */
   const trustyContract = await ethers.getContractFactory("Trusty");
+
+  const awareness = prompt('ARE YOU SURE YOU WANT TO DEPLOY? [deploy] or [press any button] to exit: ')==="deploy"?true:false;
+  if(!awareness) {
+    throw "[Aborting all and exiting...]";
+  }
 
   // here we deploy the contract
   const deployedTrustyContract = await trustyContract.deploy(owners, confirmations);
