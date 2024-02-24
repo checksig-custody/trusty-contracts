@@ -1,23 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-/**
- * 0xRMS TRUSTY FACTORY v0.1
- * Copyright (c) 2024 Ramzi Bougammoura
- */
-
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Trusty.sol";
 
-//import "hardhat/console.sol";
-
 /**
- * @title Trusty Multisignature Factory
+ * @title Trusty Factory Multisignature
  * @author Ramzi Bougammoura
- * @notice This contract helps to deploy, manage and interact with Trusty's multisignature
+ * @notice This contract is the Trusty Factory multisignatures deployer
+ * @dev Most function calls are meant to be proxied from the Factory to the Trusty owned
+ * Copyright (c) 2024 Ramzi Bougammoura
  */
-
 contract TrustyFactory is Ownable {
 
     // Trusty indexed array
@@ -67,8 +61,10 @@ contract TrustyFactory is Ownable {
         numAddressesWhitelisted++;
 
         for (uint i = 0; i < _owners.length; i++) {
-            whitelistedAddresses[_owners[i]] = true;
-            numAddressesWhitelisted++;
+            if(!whitelistedAddresses[_owners[i]]) {
+                whitelistedAddresses[_owners[i]] = true;
+                numAddressesWhitelisted++;
+            }            
         }
 
         trustyOwner[totalTrusty] = _owners;

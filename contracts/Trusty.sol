@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: MIT
 
-/**
- * 0xRMS TRUSTY v0.1
- * Copyright (c) 2024 Ramzi Bougammoura
- */
-
 pragma solidity ^0.8.24;
-
-//import "hardhat/console.sol";
 
 /**
  * @title Trusty Multisignature
  * @author Ramzi Bougammoura
  * @notice This contract is inherithed by Trusty Factory deployer
  * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
+ * Copyright (c) 2024 Ramzi Bougammoura
  */
 contract Trusty {
     //Events
