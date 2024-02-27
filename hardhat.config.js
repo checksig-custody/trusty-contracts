@@ -12,7 +12,7 @@ if(process.argv.length === 2 && process.argv[1].includes("scripts/deploy.js") ||
 const {INFURA_API_KEY, COINMARKETCAP_API_KEY, ETHERSCAN_API_KEY, QUICKNODE_HTTP_URL, PRIVATE_KEY, LEDGER_ADDRESS, MNEMONIC, PASSPHRASE} = process.env;
 
 const gasReport = true;
-const gasPrice = 20;
+const gasPrice = 10;
 
 // Set to `true` and insert the `ledgerAddress` that will be used to deploy 
 const useLedger = input;
@@ -105,12 +105,17 @@ if(useLedger) {
         ]:[],
       },
       mumbai: {
-        url: QUICKNODE_HTTP_URL,
+        url: `https://polygon-mumbai.infura.io/v3/${INFURA_API_KEY}`,
         ledgerAccounts: useLedger?[
           ledgerAddress
         ]:[],
       },
-      // Uncomment when you need to deploy and there is a PRIVATE_KEY in .env file
+      polygon: {
+        url: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
+        ledgerAccounts: useLedger?[
+          ledgerAddress
+        ]:[],
+      },
       mainnet: {
         chainId: 1,
         url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
@@ -167,15 +172,19 @@ if(useLedger) {
         //accounts: [PRIVATE_KEY],
       },
       mumbai: {
-        url: QUICKNODE_HTTP_URL,
+        url: `https://polygon-mumbai.infura.io/v3/${INFURA_API_KEY}`,
+        //accounts: [PRIVATE_KEY],
+      },
+      polygon: {
+        url: `https://polygon-mainnet.infura.io/v3/${INFURA_API_KEY}`,
         //accounts: [PRIVATE_KEY],
       },
       // Uncomment when you need to deploy and there is a PRIVATE_KEY in .env file
-      /*
       mainnet: {
         chainId: 1,
         url: `https://mainnet.infura.io/v3/${INFURA_API_KEY}`,
         //accounts: [PRIVATE_KEY],
+        /*
         accounts: {
           mnemonic: MNEMONIC,
           path: "m/44'/60'/0'/0",
@@ -183,8 +192,8 @@ if(useLedger) {
           count: 20,
           passphrase: PASSPHRASE + ""
         },
-      },    
-      */
+        */
+      },
     }
   };
 }

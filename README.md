@@ -4,8 +4,11 @@
 
 - Clone the repository and `cd` into it
 - Create a `.env` file and put in the environment variables (see `.env.template`).
-- It is recommended to insert in the `.env` the variable `PRIVATE_KEY` only when you need actually to deploy the contract on the network and removing it immediately after.
-- To run the smart contract locally just use the command `npm run start`, but to 'deploy' on blockchain remember to check and eventually edit the file `hardhat.config.js` as it contains the right hardhat framework's configurations `/*commented*/` to run locally instead of deploying the contract on the network specified.
+- To run and test the smart contract locally just use the command `npm run start` and `npm run test`.
+- It is recommended to insert in the `.env` the variable `PRIVATE_KEY` only when you need actually to deploy the contract on the desired network and removing it immediately after while removing.
+- To 'deploy' the smart contract on blockchain remember to check and eventually edit the file `hardhat.config.js` removing the comment on the line containing the code `//accounts: [PRIVATE_KEY]` in the desired network.
+- It is possible to deploy the contracts using a Ledger wallet hardware device answering correctly to the interactive prompt that will appear when running the `npm run deploy`.
+- It is possible to deploy a single Trusty multi-signature without the need to deploy the Trusty Factory deployer using the command `npm run deploy-single`.
 
 ## Install, compile, run, deploy and verify
 
@@ -36,6 +39,9 @@ npm run deploy mainnet
 
 # Verify contract
 npm run verify mainnet <Contract_Address> "ConstructorArg1" "ConstructorArg2"
+
+# Deploy a single Trusty without Factory
+npm run deploy-single
 ```
 
 ## Scripts commands shortcut
