@@ -213,10 +213,9 @@ contract TrustyFactory is Ownable {
     function whitelistMe() public payable {
         // check if the numAddressesWhitelisted < maxWhitelistedAddresses, if not then throw an error.
         require(numAddressesWhitelisted < maxWhitelistedAddresses, "Whitelist limit reached");
+        require(!whitelistedAddresses[msg.sender],"You are already whitelisted");
+        require(msg.value >= _price, "Ether sent is not enough");
 
-        if(_priceEnabled) {
-            require(msg.value >= _price, "Ether sent is not enough");
-        }
         // Add the address which called the function to the whitelistedAddress array
         whitelistedAddresses[msg.sender] = true;
         
