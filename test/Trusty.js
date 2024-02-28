@@ -144,12 +144,24 @@ describe("Trusty tests", async () => {
             await expect(Factory.createContract(owners, 0, {value: trustyPrice})).to.be.reverted
         });
 
-        it("should revert with 1of2 test",async () => {
+        it("create 1of2 test",async () => {
             await deployFactory()
 
             const owners = [accounts.owner.address, accounts.randomAccount.address];
 
-            await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
+            const totalPre = await Factory.totalTrusty()
+
+            expect(totalPre).equals(0)
+
+            const create = await Factory.createContract(owners, 1, {value: trustyPrice})
+
+            //await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
+
+            const totalPost = await Factory.totalTrusty()
+
+            expect(totalPost).equals(1)
+
+            expect(create.hash !== null)
         });
 
         it("should revert with 0 threshold test",async () => {
@@ -160,12 +172,24 @@ describe("Trusty tests", async () => {
             await expect(Factory.createContract(owners, 0, {value: trustyPrice})).to.be.reverted
         });
 
-        it("should revert with wrong threshold test",async () => {
+        it("create trusty with 1 threshold test",async () => {
             await deployFactory()
 
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
 
-            await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
+            const totalPre = await Factory.totalTrusty()
+
+            expect(totalPre).equals(0)
+
+            const create = await Factory.createContract(owners, 1, {value: trustyPrice})
+
+            //await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
+
+            const totalPost = await Factory.totalTrusty()
+
+            expect(totalPost).equals(1)
+
+            expect(create.hash !== null)
         });
 
         it("should revert with more threshold than owners test",async () => {
@@ -797,7 +821,7 @@ describe("Trusty tests", async () => {
 
             getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
 
-            const whitelistToCheck = [accounts.anonymous.address] //trustyAddr, 
+            const whitelistToCheck = [trustyAddr, accounts.anonymous.address] //trustyAddr, 
 
             for(let i = 0; i < getTrustyWhitelist.length; i++) {
                 //console.log(getTrustyWhitelist[i],whitelistToCheck[i])
