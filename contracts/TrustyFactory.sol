@@ -19,6 +19,9 @@ contract TrustyFactory is Ownable {
 
     uint256 public totalTrusty = 0;
 
+    // mapping from trusty index => address => string
+    mapping(uint => string) public trustyID;
+
     //  _price of one Trusty
     uint256 public _price = 0.05 ether;
     bool public _priceEnabled = false;
@@ -49,13 +52,15 @@ contract TrustyFactory is Ownable {
     * @param _owners Array of owners' addresses
     * @param _nTX Minimum number of confirmations required to execute a transaction
     */
-    function createContract(address[] memory _owners, uint _nTX) payable public notWhitelisted {
+    function createContract(address[] memory _owners, uint _nTX, string memory _id, address[] memory _whitelist) payable public notWhitelisted {
         if(_priceEnabled) {
             require(msg.value >= _price, "Ether sent is not enough");
         }
 
-        Trusty trusty = new Trusty(_owners, _nTX);
+        Trusty trusty = new Trusty(_owners, _nTX, _id, _whitelist);
         contracts.push(trusty);
+
+        trustyID[totalTrusty] = _id;
 
         whitelistedAddresses[address(trusty)] = true;
         numAddressesWhitelisted++;
@@ -171,15 +176,6 @@ contract TrustyFactory is Ownable {
     }
 
     /**
-    * @notice This method is used by the Trusty's owner to set a maximum number of whitelisted addresses
-    * @param _contractIndex The Trusty contract index that will be called
-    * @param _maxWhitelistedAddresses The number of maximum addresses that can be whitelisted
-    */
-    function setTrustyMaxWhitelist(uint256 _contractIndex, uint8 _maxWhitelistedAddresses) public notWhitelisted {
-        return contracts[_contractIndex].setMaxWhitelist(_maxWhitelistedAddresses);
-    }
-
-    /**
     * @notice This method is used by the Trusty's owner to get the whitelisted addresses
     * @param _contractIndex The Trusty contract index that will be called
     * @return address[] Returns an array of whitelisted addresses
@@ -189,21 +185,21 @@ contract TrustyFactory is Ownable {
     }
 
     /**
-    * @notice This method is used by the Trusty's owner to update the whitelisted addresses
+    * @notice This method is used by the Trusty's owner to get the blacklisted addresses
     * @param _contractIndex The Trusty contract index that will be called
-    * @param addresses An array of addresses to be whitelisted
+    * @return address[] Returns an array of whitelisted addresses
     */
-    function addToTrustyWhitelist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
-        return contracts[_contractIndex].addAddressToWhitelist(addresses);
+    function getTrustyBlackist(uint256 _contractIndex) public view returns(address[] memory) {
+        return contracts[_contractIndex].getBlacklist();
     }
 
     /**
-    * @notice This method is used by the Trusty's owner to update the whitelisted addresses
+    * @notice This method is used by the Trusty's owner to update the blacklisted addresses
     * @param _contractIndex The Trusty contract index that will be called
-    * @param addresses An array of addresses to be removed from whitelist
+    * @param addresses An array of addresses to be blacklisted
     */
-    function removeFromTrustyWhitelist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
-        return contracts[_contractIndex].removeAddressFromWhitelist(addresses);
+    function addToTrustyBlacklist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
+        return contracts[_contractIndex].addAddressToBlacklist(addresses);
     }
 
     /**

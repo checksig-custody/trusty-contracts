@@ -42,10 +42,12 @@ const main = async () => {
 
   // Get the contract's code to be deployed from `contracts/TrustyFactory.sol`
   const ContractFactory = await hre.ethers.getContractFactory("TrustyFactory");
+  const ContractTrusty = await hre.ethers.getContractFactory("Trusty");
 
   // Deploy locally the contract and wait for his availability 
   const Contract = await ContractFactory.deploy();
-  await Contract.deployed();  
+  await Contract.deployed();
+  
   console.log("[TrustyFactory address]:", Contract.address);
   console.log("[TrustyFactory Owner address]:", owner.address);
 
@@ -77,26 +79,30 @@ const main = async () => {
   let whitelist = await Contract.connect(owner).addToFactoryWhitelist([randomAccount.address,other.address]);
 
   // Create a Trusty multisignature
-  const create = await Contract.createContract(owners, 2, {value:0}); //ethers.utils.parseEther("0.02")
+  const create = await Contract.createContract(owners, 2, "first", [anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1"], {value:0}); //ethers.utils.parseEther("0.02")
+  //const create = await Contract.createContract(owners, 2, "first", [anonymous.address], {value:0}); //ethers.utils.parseEther("0.02")
   
+  const Trusty = await ContractTrusty.deploy(owners, 2, "SingleTrusty", [anonymous.address], {value:0});
+  await Trusty.deployed();
+
   // Get created contract address
   const addr = await Contract.contracts(0);
   console.log("[Trusty address]: ", addr);
 
   // Create a second Trusty
-  const create2 = await Contract.createContract(owners, 2, {value:0});
+  const create2 = await Contract.createContract(owners, 2, "second", [], {value:0});
 
   // Retrieve the contract's address from Factory calling the method `contracts()` and passing the index number
   const addr2 = await Contract.contracts(1);
   console.log("[Trusty2 address]: ", addr2);
 
   // Create a third Trusty
-  const create3 = await Contract.createContract(owners, 2, {value:0}); 
+  const create3 = await Contract.createContract(owners, 2, "third", [], {value:0}); 
   const addr3 = await Contract.contracts(2);
   console.log("[Trusty3 address]: ", addr3);
 
   // Create a Trusty whose owners are 1 Externally Owned Account (with private keys) plus the previous Trusties created (without private keys) resulting in a chained tree of Trusty multisignatures 
-  const createMix = await Contract.createContract([addr, addr2, addr3], 2, {value:0}); 
+  const createMix = await Contract.createContract([addr, addr2, addr3], 2, "mixed", [], {value:0}); 
   const trustyMixAddr = await Contract.contracts(3);
   console.log("[TrustyMIX address]: ", trustyMixAddr);
 
@@ -133,17 +139,21 @@ const main = async () => {
   const imOwner = await Contract.imOwner(0);
   console.log("[ImOwner?] ",imOwner);
 
-  const setWhitelist = await Contract.connect(owner).addToTrustyWhitelist(0,[anonymous.address]);
+  //const setWhitelist = await Contract.connect(owner).addToTrustyWhitelist(0,[anonymous.address]);
 
   const getWhitelist = await Contract.connect(owner).getTrustyWhitelist(0)
 
+  console.log(`[whitelisted]: ${getWhitelist}`)
+
   // Propose to submit a tx from a Trusty
-  const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, 0x00, 0);
+  const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, "0xa9059cbb000000000000000000000000eDaCEf763B85597A517061D276D61947610411D10000000000000000000000000000000000000000000000000de0b6b3a7640000", 0);
+  //const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, Buffer.from("This is a test for catching calldata..."), 0);
+  //const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, 0x0, 0);
   await txSend.wait();
 
   // Get Trusty txs status
   const txGet = await Contract.getTx(0,0);
-  console.log("[get TX status]:", txGet);
+  //console.log("[get TX status]:", txGet);
 
   // Confirm a tx from an account of owners
   const txConfirm = await Contract.connect(randomAccount).trustyConfirm(0, 0);
@@ -157,7 +167,7 @@ const main = async () => {
     // Execute a tx
     const txExe = await Contract.connect(owner).trustyExecute(0,0);
     await txExe.wait();
-    console.log("[Executed TX hash]:", txExe.hash);
+    //console.log("[Executed TX hash]:", txExe.hash);
 
     // Check the received amount
     const receiver = await hre.ethers.provider.getBalance(other.address);
@@ -165,8 +175,17 @@ const main = async () => {
 
     // Get Trusty txs status x2
     const txGet2 = await Contract.getTx(0, 0);
-    console.log("[get TX status updated]:", txGet2);
+    //console.log("[get TX status updated]:", txGet2);
   });
+
+  const totTrusty = await Contract.totalTrusty();
+  for (let i = 0; i < totTrusty; i++) {
+    const id = await Contract.trustyID(i)
+    console.log(`[${i}]: ${id}`)
+  }
+
+  //const data = await Trusty.decodeData("0xa9059cbb00000000000000000000000eDaCEf763B85597A517061D276D61947610411D10000000000000000000000000000000000000000000000000de0b6b3a7640000")
+  //console.log(`[data]: ${data}`)
 };
 
 const runMain = async () => {

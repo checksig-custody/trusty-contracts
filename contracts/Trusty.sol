@@ -10,6 +10,8 @@ pragma solidity ^0.8.24;
  * Copyright (c) 2024 Ramzi Bougammoura
  */
 contract Trusty {
+    string id;
+
     //Events
     event Deposit(address indexed sender, uint amount, uint balance);
     event SubmitTransaction(
@@ -49,13 +51,18 @@ contract Trusty {
     // whitelist
     mapping(address => bool) public whitelistedToAddresses;
     address[] public whitelistedAddressesList;
-    
-    uint8 public maxWhitelistedAddresses = 10;
-    uint8 public numAddressesWhitelisted = 0;
 
-    modifier notWhitelisted(address toAddress) {
-        //require(whitelistedToAddresses[toAddress]);
-        require(whitelistedToAddresses[toAddress], "Address not in Trusty Whitelist!");
+    // blacklist
+    mapping(address => bool) public blacklistedToAddresses;
+    address[] public blacklistedAddressesList;
+
+    modifier isWhitelisted(address toAddress) {
+        require(whitelistedToAddresses[toAddress], "Address/Contract not in Trusty Whitelist!");
+        _;
+    }
+
+    modifier notBlacklisted(address toAddress) {
+        require(!blacklistedToAddresses[toAddress], "Address is blacklisted!");
         _;
     }
 
@@ -80,7 +87,7 @@ contract Trusty {
     }
 
     // Constructor
-    constructor(address[] memory _owners, uint _numConfirmationsRequired) {
+    constructor(address[] memory _owners, uint _numConfirmationsRequired, string memory _id, address[] memory whitelist) {
         require(_owners.length > 0, "owners required");
         require(
             _numConfirmationsRequired > 0 &&
@@ -107,7 +114,11 @@ contract Trusty {
         whitelistedToAddresses[address(this)] = true;
         whitelistedAddressesList.push(address(this));
 
+        addAddressToWhitelist(whitelist);
+
         numConfirmationsRequired = _numConfirmationsRequired;
+
+        id = _id;
     }
 
     /**
@@ -117,9 +128,10 @@ contract Trusty {
     * @param _data Optional data field or calldata to another contract
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
-    function submitTransaction(address _to, uint _value, bytes memory _data, uint _timeLock) public onlyOwner notWhitelisted(_to) {
-        require(block.number <= block.number + _timeLock + 0, "timeLock must be greater than current blockHeight + timeLock");
-        
+    function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner isWhitelisted(_to) notBlacklisted(_to) {
+        require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
+        this.checkData(_data);
+
         uint txIndex = transactions.length;
 
         transactions.push(
@@ -152,36 +164,6 @@ contract Trusty {
     }
 
     /**
-    * @notice Method used to execute the transaction with index `_txIndex` if it exists and is not executed yet.
-    * It can only be called by the contract's owners
-    * @param _txIndex The index of the transaction that needs to be signed and confirmed
-    */
-    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
-        Transaction storage transaction = transactions[_txIndex];
-
-        require(
-            transaction.numConfirmations >= numConfirmationsRequired,
-            "cannot execute tx due to number of confirmation required"
-        );
-
-        if (transaction.blockHeight + transaction.timeLock + 0 > block.number) {
-            int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
-            revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
-        }
-
-        (bool success, ) = transaction.to.call{value: transaction.value}(
-            //return abi.encodeWithSignature("callMe(uint256)", 123);
-            //return abi.encodeWithSignature(transaction.data);
-            transaction.data
-        );
-        require(success, "tx failed");
-
-        transaction.executed = true;
-        
-        emit ExecuteTransaction(tx.origin, _txIndex);
-    }
-
-    /**
     * @notice Method used to revoke the confirmation of transaction with index `_txIndex` if it exists and is not executed yet.
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
@@ -196,6 +178,37 @@ contract Trusty {
 
         emit RevokeConfirmation(tx.origin, _txIndex);
     }
+
+    /**
+    * @notice Method used to execute the transaction with index `_txIndex` if it exists and is not executed yet.
+    * It can only be called by the contract's owners
+    * @param _txIndex The index of the transaction that needs to be signed and confirmed
+    */
+    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+        Transaction storage transaction = transactions[_txIndex];
+
+        require(!blacklistedToAddresses[transaction.to], "Cannot execute, address/contract is blacklisted!");
+        this.checkData(transaction.data);
+        
+        require(
+            transaction.numConfirmations >= numConfirmationsRequired,
+            "cannot execute tx due to number of confirmation required"
+        );
+
+        if (transaction.blockHeight + transaction.timeLock > block.number) {
+            int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
+            revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
+        }
+
+        (bool success, ) = transaction.to.call{value: transaction.value}(
+            transaction.data
+        );
+        require(success, "tx failed");
+
+        transaction.executed = true;
+        
+        emit ExecuteTransaction(tx.origin, _txIndex);
+    }    
 
     /**
     * @notice Method used to execute the transaction with index `_txIndex` if it exists and is not executed yet.
@@ -243,14 +256,6 @@ contract Trusty {
     }
 
     /**
-    * @notice This method is used by the Trusty's owner to set a maximum number of whitelisted addresses
-    * @custom:owner Can be called by owner
-    */
-    function setMaxWhitelist(uint8 _maxWhitelistedAddresses) public onlyOwner {
-        maxWhitelistedAddresses =  _maxWhitelistedAddresses;
-    }
-
-    /**
     * @notice This method is used by the Trusty's owner to get the whitelisted addresses
     * @custom:owner Can be called by owner
     */
@@ -263,37 +268,32 @@ contract Trusty {
     * @custom:param `address[]` An array of addresses to be whitelisted
     * @custom:owner Can be called by owner
     */
-    function addAddressToWhitelist(address[] memory addresses) public onlyOwner {
-        // check if the numAddressesWhitelisted < maxWhitelistedAddresses, if not then throw an error.
-        require(numAddressesWhitelisted < maxWhitelistedAddresses, "Whitelist limit reached");
-        
+    function addAddressToWhitelist(address[] memory addresses) internal {
         for (uint i = 0; i < addresses.length; i++) {
-            // Add the address which called the function to the whitelistedAddress array
+            require(!whitelistedToAddresses[addresses[i]], "Each address must be unique to be in whitelist");
             whitelistedToAddresses[addresses[i]] = true;
             whitelistedAddressesList.push(addresses[i]);
-            
-            // Increase the number of whitelisted addresses
-            numAddressesWhitelisted += 1;
         }        
     }
 
     /**
-    * @notice removeAddressFromWhitelist - This function removes the address of the sender to the whitelist
-    * @custom:param `address[]` An array of addresses to be removed from whitelist
+    * @notice This method is used by the Trusty's owner to get the blacklisted addresses
     * @custom:owner Can be called by owner
     */
-    function removeAddressFromWhitelist(address[] memory addresses) public onlyOwner {        
-        for (uint i = 0; i < addresses.length; i++) {
-            // Add the address which called the function to the whitelistedAddress array
-            whitelistedToAddresses[addresses[i]] = false;
+    function getBlacklist() public view onlyOwner returns(address[] memory) {
+        return blacklistedAddressesList;
+    }
 
-            for (uint j = 0; j < whitelistedAddressesList.length; j++) {
-                if (whitelistedAddressesList[j] == addresses[i]) {
-                    delete whitelistedAddressesList[j];
-                }
-            }
-            // Decrease the number of whitelisted addresses
-            numAddressesWhitelisted -= 1;
+    /**
+    * @notice addAddressToBlacklist - This function adds the address to the blacklist
+    * @custom:param `address[]` An array of addresses to be removed from blacklist
+    * @custom:owner Can be called by owner
+    */
+    function addAddressToBlacklist(address[] memory addresses) public onlyOwner {
+        for (uint i = 0; i < addresses.length; i++) {
+            require(!blacklistedToAddresses[addresses[i]], "Duplicate address in blacklist");
+            blacklistedToAddresses[addresses[i]] = true;
+            blacklistedAddressesList.push(addresses[i]);
         }        
     }
 
@@ -312,14 +312,39 @@ contract Trusty {
     }
 
     /**
-    * @notice Method used by the owners to destroy the contract making it unusuable and withdrawing all the funds
-    * @custom: ``selfdestruct has been deprecated since Solidity 0.8.18
+    * @notice Utility function to decode and check erc20 serialized calldata
     */
-    /*
-    function destroy() public onlyOwner {
-        //selfdestruct(payable(address)) > address.send(this.balance);
-        address _address = tx.origin;
-        selfdestruct(payable(_address));
+    function checkData(bytes calldata encodedData) external view returns (bool) {
+        uint len = encodedData.length;
+
+        bool decoded = false;
+        if (len >= 4 && len % 2 == 0) {
+            bytes memory selector = bytes(abi.encode(bytes(encodedData[0:4])));
+            bytes memory transfer = bytes(abi.encode(bytes(hex"a9059cbb")));
+            bytes memory approve = bytes(abi.encode(bytes(hex"095ea7b3")));
+            bytes memory transferFrom = bytes(abi.encode(bytes(hex"23b872dd")));
+            bytes memory mint = bytes(abi.encode(bytes(hex"40c10f19")));
+            if (
+                keccak256(transfer) == keccak256(selector) || 
+                keccak256(approve) == keccak256(selector) ||
+                keccak256(transferFrom) == keccak256(selector) ||
+                keccak256(mint) == keccak256(selector)
+            ) {
+                bool passed = bool(
+                    keccak256(transfer) == keccak256(selector) || 
+                    keccak256(approve) == keccak256(selector) || 
+                    keccak256(transferFrom) == keccak256(selector) ||
+                    keccak256(mint) == keccak256(selector)
+                );
+                
+                if (passed) {
+                    address payable to = abi.decode(encodedData[4:],(address));
+                    require(whitelistedToAddresses[to], "Calldata not allowed or address not whitelisted!");
+                    require(!blacklistedToAddresses[to], "Address in calldata is blacklisted!");
+                    decoded = true;
+                }
+            }
+        }
+        return decoded;
     }
-    */
 }
