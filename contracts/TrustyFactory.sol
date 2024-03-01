@@ -19,7 +19,7 @@ contract TrustyFactory is Ownable {
 
     uint256 public totalTrusty = 0;
 
-    // mapping from trusty index => address => string
+    // mapping from trusty index => string
     mapping(uint => string) public trustyID;
 
     //  _price of one Trusty

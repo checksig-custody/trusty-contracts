@@ -89,6 +89,9 @@ contract Trusty {
     // Constructor
     constructor(address[] memory _owners, uint _numConfirmationsRequired, string memory _id, address[] memory whitelist) {
         require(_owners.length > 0, "owners required");
+
+        require(whitelist.length > 0, "a minimum whitelist is required or the funds will be locked forever");
+        
         require(
             _numConfirmationsRequired > 0 &&
                 _numConfirmationsRequired <= _owners.length,
@@ -268,7 +271,7 @@ contract Trusty {
     * @custom:param `address[]` An array of addresses to be whitelisted
     * @custom:owner Can be called by owner
     */
-    function addAddressToWhitelist(address[] memory addresses) internal {
+    function addAddressToWhitelist(address[] memory addresses) private {
         for (uint i = 0; i < addresses.length; i++) {
             require(!whitelistedToAddresses[addresses[i]], "Each address must be unique to be in whitelist");
             whitelistedToAddresses[addresses[i]] = true;

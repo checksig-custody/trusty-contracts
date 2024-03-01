@@ -98,6 +98,26 @@ describe("Trusty tests", async () => {
     });
 
     describe("Create Trusty tests", async () => {
+        it("create 1of2 test",async () => {
+            await deployFactory()
+
+            const owners = [accounts.owner.address, accounts.randomAccount.address];
+
+            const totalPre = await Factory.totalTrusty()
+
+            expect(totalPre).equals(0)
+
+            const create = await Factory.createContract(owners, 1, "", [...owners], {value: trustyPrice})
+
+            //await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
+
+            const totalPost = await Factory.totalTrusty()
+
+            expect(totalPost).equals(1)
+
+            expect(create.hash !== null)
+        });
+
         it("create 2of3 test", async () => {
             await deployFactory()
 
@@ -107,7 +127,7 @@ describe("Trusty tests", async () => {
             
             expect(totalPre).equals(0)
 
-            const create = await Factory.createContract(owners, 2, "", [], {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], {value: trustyPrice});
 
             const totalPost = await Factory.totalTrusty()
 
@@ -127,7 +147,7 @@ describe("Trusty tests", async () => {
             
             expect(totalPre).equals(0)
 
-            const create = await Factory.createContract(owners, 3, "", [], {value: trustyPrice});
+            const create = await Factory.createContract(owners, 3, "", [...owners], {value: trustyPrice});
 
             const totalPost = await Factory.totalTrusty()
 
@@ -136,42 +156,6 @@ describe("Trusty tests", async () => {
             //const addr = await Factory.contracts(0);
 
             expect(create.hash !== null)
-        });
-
-        it("should revert with empty owners array test", async () => {
-            await deployFactory()
-
-            const owners = [];
-
-            await expect(Factory.createContract(owners, 0, "", [], {value: trustyPrice})).to.be.reverted
-        });
-
-        it("create 1of2 test",async () => {
-            await deployFactory()
-
-            const owners = [accounts.owner.address, accounts.randomAccount.address];
-
-            const totalPre = await Factory.totalTrusty()
-
-            expect(totalPre).equals(0)
-
-            const create = await Factory.createContract(owners, 1, "", [], {value: trustyPrice})
-
-            //await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
-
-            const totalPost = await Factory.totalTrusty()
-
-            expect(totalPost).equals(1)
-
-            expect(create.hash !== null)
-        });
-
-        it("should revert with 0 threshold test",async () => {
-            await deployFactory()
-
-            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-
-            await expect(Factory.createContract(owners, 0, "", [], {value: trustyPrice})).to.be.reverted
         });
 
         it("create trusty with 1 threshold test",async () => {
@@ -183,7 +167,7 @@ describe("Trusty tests", async () => {
 
             expect(totalPre).equals(0)
 
-            const create = await Factory.createContract(owners, 1, "", [], {value: trustyPrice})
+            const create = await Factory.createContract(owners, 1, "", [...owners], {value: trustyPrice})
 
             //await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
 
@@ -193,6 +177,22 @@ describe("Trusty tests", async () => {
 
             expect(create.hash !== null)
         });
+
+        it("should revert with empty owners array test", async () => {
+            await deployFactory()
+
+            const owners = [];
+
+            await expect(Factory.createContract(owners, 0, "", [], {value: trustyPrice})).to.be.reverted
+        });        
+
+        it("should revert with 0 threshold test",async () => {
+            await deployFactory()
+
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+
+            await expect(Factory.createContract(owners, 0, "", [], {value: trustyPrice})).to.be.reverted
+        });        
 
         it("should revert with more threshold than owners test",async () => {
             await deployFactory()
@@ -236,7 +236,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
-            const create = await Factory.createContract(owners, 2, "", [], {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -253,7 +253,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
-            const create = await Factory.createContract(owners, 2, "", [], {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -401,7 +401,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners,accounts.anonymous.address]);
-            const create = await Factory.createContract(owners, 2, "", [], {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -859,7 +859,7 @@ describe("Trusty tests", async () => {
             // Factory WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
 
-            const create = await Factory.createContract(owners, 2, "", [], {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1");
@@ -1050,7 +1050,7 @@ describe("Trusty tests", async () => {
         it("deploy single Trusty test", async () => {
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            await deployTrustySingle(owners,2, "", []);
+            await deployTrustySingle(owners,2, "", [...owners]);
             const trustyAddress = Trusty.address;
             //console.log(`[Trusty address]: ${trustyAddress}`);
             expect(Trusty.deployTransaction.hash !== null && Trusty.address !== null);
@@ -1059,7 +1059,7 @@ describe("Trusty tests", async () => {
         it("deposit to single Trusty test", async () => {
             await istantiateAccounts();
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
-            await deployTrustySingle(owners,2, "", []);
+            await deployTrustySingle(owners,2, "", [...owners]);
             const trustyAddress = Trusty.address;
             
             const amount = ethers.utils.parseEther("0.1");

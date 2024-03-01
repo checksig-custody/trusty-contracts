@@ -90,19 +90,19 @@ const main = async () => {
   console.log("[Trusty address]: ", addr);
 
   // Create a second Trusty
-  const create2 = await Contract.createContract(owners, 2, "second", [], {value:0});
+  const create2 = await Contract.createContract(owners, 2, "second", [anonymous.address, ...owners], {value:0});
 
   // Retrieve the contract's address from Factory calling the method `contracts()` and passing the index number
   const addr2 = await Contract.contracts(1);
   console.log("[Trusty2 address]: ", addr2);
 
   // Create a third Trusty
-  const create3 = await Contract.createContract(owners, 2, "third", [], {value:0}); 
+  const create3 = await Contract.createContract(owners, 2, "third", [...owners], {value:0}); 
   const addr3 = await Contract.contracts(2);
   console.log("[Trusty3 address]: ", addr3);
 
   // Create a Trusty whose owners are 1 Externally Owned Account (with private keys) plus the previous Trusties created (without private keys) resulting in a chained tree of Trusty multisignatures 
-  const createMix = await Contract.createContract([addr, addr2, addr3], 2, "mixed", [], {value:0}); 
+  const createMix = await Contract.createContract([addr, addr2, addr3], 2, "mixed", [addr, addr2, addr3], {value:0}); 
   const trustyMixAddr = await Contract.contracts(3);
   console.log("[TrustyMIX address]: ", trustyMixAddr);
 
@@ -143,7 +143,7 @@ const main = async () => {
 
   const getWhitelist = await Contract.connect(owner).getTrustyWhitelist(0)
 
-  console.log(`[whitelisted]: ${getWhitelist}`)
+  //console.log(`[whitelisted]: ${getWhitelist}`)
 
   // Propose to submit a tx from a Trusty
   const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, "0xa9059cbb000000000000000000000000eDaCEf763B85597A517061D276D61947610411D10000000000000000000000000000000000000000000000000de0b6b3a7640000", 0);
