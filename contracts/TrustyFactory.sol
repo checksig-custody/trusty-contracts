@@ -189,7 +189,7 @@ contract TrustyFactory is Ownable {
     * @param _contractIndex The Trusty contract index that will be called
     * @return address[] Returns an array of whitelisted addresses
     */
-    function getTrustyBlackist(uint256 _contractIndex) public view returns(address[] memory) {
+    function getTrustyBlacklist(uint256 _contractIndex) public view returns(address[] memory) {
         return contracts[_contractIndex].getBlacklist();
     }
 
