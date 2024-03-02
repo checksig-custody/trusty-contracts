@@ -24,7 +24,7 @@
     "hardhat": "^2.13.0"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.8.0",
+    "@openzeppelin/contracts": "^4.9.6",
     "dotenv": "^16.0.3",
     "prompt-sync": "^4.2.0"
   }
