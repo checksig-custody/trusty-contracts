@@ -42,7 +42,7 @@ async function main() {
   A ContractFactory in ethers.js is an abstraction used to deploy new smart contracts,
   so exchangeContract here is a factory for instances of our Exchange contract.
   */
-  const trustyContract = await ethers.getContractFactory("Trusty");
+  const trustyContract = await ethers.getContractFactory("Recovery");
 
   const awareness = prompt('ARE YOU SURE YOU WANT TO DEPLOY? [deploy] or [press any button] to exit: ')==="deploy"?true:false;
   if(!awareness) {
@@ -50,7 +50,7 @@ async function main() {
   }
 
   // here we deploy the contract
-  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, whitelist, recovery);
+  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, [...whitelist], recovery);
   await deployedTrustyContract.deployed();
 
   // print the address of the deployed contract

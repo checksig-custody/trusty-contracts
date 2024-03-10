@@ -3,13 +3,13 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title Trusty Multisignature
+ * @title Trusty Recovery Multisignature
  * @author Ramzi Bougammoura
  * @notice This contract is inherithed by Trusty Factory deployer
  * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
-contract Trusty {
+contract Recovery {
     string id;
 
     //Events
@@ -74,7 +74,7 @@ contract Trusty {
     }
 
     modifier onlyRecover() {
-        require(msg.sender == recoveryTrusty, "Not allowed!");        
+        require(msg.sender == recoveryTrusty || tx.origin == recoveryTrusty, "Not allowed!");
         _;
     }
 
@@ -176,27 +176,20 @@ contract Trusty {
     /**
     * @notice Method used by recovery address in ERC20 Recovery scenario
     */
-    function recoverERC20(address _token) public onlyRecover notUnlocked {        
-        (bytes memory _dataApprove,) = encodeRecover(_token);
-        (,bytes memory _dataTransfer) = encodeRecover(_token);
+    function recoverERC20(address _token, uint256 _amount) public onlyRecover notUnlocked {        
+        (bytes memory _dataApprove,) = encodeRecover(_amount);
+        (,bytes memory _dataTransfer) = encodeRecover(_amount);
         (bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
         require(approveSuccess, "recoverERC20 approve failed");
         (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
         require(transferSuccess, "recoverERC20 transfer failed");
     }
 
-    /**
-    * @notice Method used to encode an ERC20 calldata
-    */
-    function encodeRecover(address _token) private returns(bytes memory, bytes memory) {
+    function encodeRecover(uint256 _amount) private view returns (bytes memory, bytes memory) {
+        //bytes memory encoded = abi.encodeWithSignature("callMe(uint256)", 123);
         address _recover = recoveryTrusty;
-        
-        bytes memory balance = abi.encodeWithSignature("balanceOf(address)", address(this));
-        (bool success, bytes memory _amount) = _token.call{value: 0}(balance);
-        require(success, "Unable to get balance of Token");
-
-        bytes memory approve = abi.encodeWithSignature("approve(address,uint256)", _recover, uint256(bytes32(_amount)));
-        bytes memory transfer = abi.encodeWithSignature("transfer(address,uint256)", _recover, uint256(bytes32(_amount)));
+        bytes memory approve = abi.encodeWithSignature("approve(address,uint256)", _recover, _amount);
+        bytes memory transfer = abi.encodeWithSignature("transfer(address,uint256)", _recover, _amount);
         return (approve,transfer);
     }
 
@@ -207,7 +200,7 @@ contract Trusty {
     * @param _data Optional data field or calldata to another contract
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
-    function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner isWhitelisted(_to) notBlacklisted(_to) locked {
+    function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner isWhitelisted(_to) notBlacklisted(_to) {
         require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
         this.checkData(_data);
 
@@ -263,7 +256,7 @@ contract Trusty {
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) locked {
+    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
 
         require(!blacklistedToAddresses[transaction.to], "Cannot execute, address/contract is blacklisted!");
@@ -352,6 +345,19 @@ contract Trusty {
     function addAddressToWhitelist(address[] memory addresses) private {
         for (uint i = 0; i < addresses.length; i++) {
             require(!whitelistedToAddresses[addresses[i]], "Each address must be unique to be in whitelist");
+            whitelistedToAddresses[addresses[i]] = true;
+            whitelistedAddressesList.push(addresses[i]);
+        }        
+    }
+
+    /**
+    * @notice addAddressToRecoverWhitelist - This function adds the address of the sender to the whitelist
+    * @custom:param `address[]` An array of addresses to be whitelisted
+    * @custom:owner Can be called by owner
+    */
+    function addAddressToRecoveryWhitelist(address[] memory addresses) public onlyOwner {        
+        for (uint i = 0; i < addresses.length; i++) {
+            // Add the address which called the function to the whitelistedAddress array
             whitelistedToAddresses[addresses[i]] = true;
             whitelistedAddressesList.push(addresses[i]);
         }        
