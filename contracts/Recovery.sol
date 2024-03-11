@@ -68,11 +68,6 @@ contract Recovery {
         _;
     }
 
-    modifier locked() {
-        require(block.number <= absolute_timelock,"Trusty is locked!");
-        _;
-    }
-
     modifier onlyRecover() {
         require(msg.sender == recoveryTrusty || tx.origin == recoveryTrusty, "Not allowed!");
         _;
