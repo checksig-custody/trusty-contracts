@@ -200,7 +200,7 @@ const main = async () => {
   });
 
   const absoluteTimelock = await Trusty.absolute_timelock();
-    console.log(`[Absolute Timelock]: ${absoluteTimelock}`);
+  console.log(`[Absolute Timelock]: ${absoluteTimelock}`);
 
   const totTrusty = await Contract.totalTrusty();
   for (let i = 0; i < totTrusty; i++) {
@@ -212,6 +212,29 @@ const main = async () => {
   //const recover = await Trusty.connect(recoveryAddr).recover(owner.address, Buffer.from("data"));
   const recoveryWhitelist = await recovery.addAddressToRecoveryWhitelist([addr,addr2,addr3,trustyMixAddr]);
   await recoveryWhitelist.wait()
+
+  const recoveryName = await recovery.id()
+  console.log(recoveryName)
+  
+  /*
+  // POR
+  const POR = await recovery.submitTransaction(addr, 0, "0x5c470ecb", 0) // 0x5c470ecb 0xa69df4b5
+  await POR.wait()
+
+  const porConfirm = await recovery.connect(other).confirmTransaction(0);
+  await porConfirm.wait();
+
+  const porConfirm2 = await recovery.connect(randomAccount).confirmTransaction(0);
+  await porConfirm2.wait();
+
+  await mine(
+    30000//ABSOLUTE_TIMELOCK + 120
+    ).then(async () => {
+    const porExe = await recovery.connect(owner).executeTransaction(0);
+    await porExe.wait();
+  })
+  */
+  
   //0xce746024
   //const recover = await recovery.submitTransaction(addr , 0, Buffer.from(""), 0);
   const recover = await recovery.submitTransaction(addr , 0, "0xce746024", 0); //ETH native
@@ -254,7 +277,7 @@ const main = async () => {
   await erc20transfer.wait()
 
   const erc20Trustybal = await erc20.connect(owner).balanceOf(addr)
-  console.log(`[Erc20Trustybal-preRecover]: ${erc20Trustybal}`)
+  //console.log(`[Erc20Trustybal-preRecover]: ${erc20Trustybal}`)
 
   //52b7d2dcc80cd2e4000000//52b7d2dcc80cd400000000//52b7d2cee7561f3c9c0000
   //0x8980f11f000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C900000000000000000000000000000000000000000052b7d2dcc80cd2e4000000
@@ -274,7 +297,7 @@ const main = async () => {
     await recoExe.wait();
     //console.log("[recoExeErc20 TX hash]:", recoExe.hash);
   })
-
+  
   const erc20Recobal = await erc20.connect(owner).balanceOf(recoveryAddr)
   console.log(`[Erc20Recobal]: ${erc20Recobal}`)
 

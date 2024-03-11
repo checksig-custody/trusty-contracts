@@ -10,7 +10,7 @@ pragma solidity ^0.8.24;
  * Copyright (c) 2024 Ramzi Bougammoura
  */
 contract Recovery {
-    string id;
+    string public id;
 
     //Events
     event Deposit(address indexed sender, uint amount, uint balance);
@@ -161,6 +161,13 @@ contract Recovery {
     * @notice Method used to update and reset the absolute timelock. Triggered after Transaction execution
     */
     function unlock() private {
+        absolute_timelock = block.number + offset + 28800;
+    }
+
+    /**
+    * @notice Method used to update and reset the absolute timelock. Triggered after Transaction execution
+    */
+    function POR() external onlyRecover notUnlocked {
         absolute_timelock = block.number + offset + 28800;
     }
 

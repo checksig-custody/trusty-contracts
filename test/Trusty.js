@@ -1194,7 +1194,7 @@ describe("Trusty tests", async () => {
     })
 
     describe("Recovery tests", async () => {
-        it("execute an eth recovery after absolute timelock expiring", async () => {
+        it("execute an eth recovery after absolute timelock expiring test", async () => {
             const ABSOLUTE_LOCK = 28800;
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -1267,7 +1267,7 @@ describe("Trusty tests", async () => {
             expect(BigInt(recoveryBal)).to.equal(amount);
         })
 
-        it("execute an erc20 recovery after absolute timelock expiring", async () => {
+        it("execute an erc20 recovery after absolute timelock expiring test", async () => {
             const ABSOLUTE_LOCK = 28800;
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -1378,7 +1378,94 @@ describe("Trusty tests", async () => {
             expect(BigInt(erc20Recoverybal)).to.equal(erc20amount);
         })
 
-        it("should revert a recover before absolute timelock expiring", async () => {
+        it("execute transaction after a POR from recovery after absolute timelock reset test", async () => {
+            const ABSOLUTE_LOCK = 28800;
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await deployFactory()
+            await deployRecovery(owners,2, "RECOVERY", [...owners], accounts.owner.address);
+            await deployErc20()
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, {value: trustyPrice});
+            const trustyAddr = await Factory.contracts(0);
+            
+            const amount = ethers.utils.parseEther("1")
+            const erc20amount = ethers.utils.parseEther("100000000")
+
+            const erc20approve = await Erc20.connect(accounts.owner).approve(trustyAddr, erc20amount)
+            await erc20approve.wait()
+
+            const erc20transfer = await Erc20.connect(accounts.owner).transfer(trustyAddr, erc20amount)
+            await erc20transfer.wait()
+
+            //const erc20Trustybal = await Erc20.connect(accounts.owner).balanceOf(trustyAddr)
+            //console.log(`[Erc20Trustybal-preRecover]: ${erc20Trustybal}`)
+            
+            const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            await txDeposit.wait();
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            await txConfirm2.wait();
+            
+            // Execute a tx after Absolute TimeLock
+            await mine(ABSOLUTE_LOCK + 116).then(async () => {
+                //const txExe = 
+                await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.reverted;
+                await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.revertedWith("Trusty is locked!")
+                //await txExe.wait();
+            })
+            
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Factory.getTx(0,0);
+
+            expect(txGet[3]).to.equal(false)
+
+            // Executes RECOVERY POR
+            const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+            await recoverWhitelist.wait();
+
+            
+            // ETH POR //0x5c470ecb //0xa69df4b5
+            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0x5c470ecb", 0);
+            await recover.wait()
+
+            const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
+            await confirm.wait()
+
+            const confirm2 = await Recovery.connect(accounts.other).confirmTransaction(0);
+            await confirm2.wait()
+
+            const executeRecover = await Recovery.connect(accounts.other).executeTransaction(0);
+            await executeRecover.wait();
+
+            // Execute a tx after Absolute TimeLock
+            await mine(1 + 116).then(async () => {
+                //const txExe = 
+                const postPOR = await Factory.connect(accounts.owner).trustyExecute(0,0);
+                await postPOR.wait()
+                expect(postPOR.hash !== null)
+                //await txExe.wait();
+            })
+        })
+
+        it("should revert a recover before absolute timelock expiring test", async () => {
             const ABSOLUTE_LOCK = 28800;
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -1453,7 +1540,7 @@ describe("Trusty tests", async () => {
             })
         })
 
-        it("should revert a recover from not recovery address", async () => {
+        it("should revert a recover from not recovery address test", async () => {
             const ABSOLUTE_LOCK = 28800;
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
