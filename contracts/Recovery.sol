@@ -61,7 +61,7 @@ contract Recovery {
     uint public absolute_timelock;
 
     // Recovery
-    address recoveryTrusty;
+    address public recoveryTrusty;
 
     modifier notUnlocked() {
         require(block.number >= absolute_timelock,"Trusty not yet unlocked!");
