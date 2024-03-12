@@ -36,6 +36,9 @@ async function main() {
   const recovery = prompt(`Insert the RECOVERY address: `)
   if(!ethers.utils.isAddress(recovery)){throw "You must enter a valid string address"}
 
+  const blocklock = parseInt(prompt('How many blocks until RECOVERY mode enabled? '));
+  if(isNaN(blocklock)) {throw `You must use a valid number: ${parseInt(blocklock)}`}
+
   const name = prompt(`Insert a name for your Trusty or leave blank `)
 
   /*
@@ -50,7 +53,7 @@ async function main() {
   }
 
   // here we deploy the contract
-  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, whitelist, recovery);
+  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, whitelist, recovery, blocklock);
   await deployedTrustyContract.deployed();
 
   // print the address of the deployed contract

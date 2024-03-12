@@ -38,6 +38,7 @@ const main = async () => {
 
   const ABSOLUTE_TIMELOCK = 28800;
   const OFFSET = 120;
+  const BLOCKLOCK = 28800
 
   // Get signers's account object from hardhat runtime environment.
   // By default, Contract instances are connected to the first signer.
@@ -88,7 +89,7 @@ const main = async () => {
   //const recoveryAddr = await Contract.contracts(0);
 
   //const recovery = await ContractTrusty.deploy(owners, 2, "RECOVERY TRUSTY", owners, owner.address, {value:0});
-  const recovery = await ContractRecovery.deploy(owners, 2, "RECOVERY TRUSTY", owners, owner.address, {value:0});
+  const recovery = await ContractRecovery.deploy(owners, 2, "RECOVERY TRUSTY", owners, owner.address, BLOCKLOCK, {value:0});
   await recovery.deployed()
   const recoveryAddr = recovery.address;
 
@@ -101,10 +102,10 @@ const main = async () => {
   console.log(`[ERC20 address]: ${erc20Addr}`)
 
   // Create a Trusty multisignature
-  const create = await Contract.createContract([...owners], 2, "first", [anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1"], recoveryAddr, {value:0}); //ethers.utils.parseEther("0.02")
+  const create = await Contract.createContract([...owners], 2, "first", [anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1"], recoveryAddr, BLOCKLOCK, {value:0}); //ethers.utils.parseEther("0.02")
   //const create = await Contract.createContract(owners, 2, "first", [anonymous.address], {value:0}); //ethers.utils.parseEther("0.02")
   
-  const Trusty = await ContractTrusty.deploy(owners, 2, "SingleTrusty", [anonymous.address], recoveryAddr, {value:0});
+  const Trusty = await ContractTrusty.deploy(owners, 2, "SingleTrusty", [anonymous.address], recoveryAddr, BLOCKLOCK, {value:0});
   await Trusty.deployed();
 
   // Get created contract address
@@ -112,19 +113,19 @@ const main = async () => {
   console.log("[Trusty address]: ", addr);
 
   // Create a second Trusty
-  const create2 = await Contract.createContract([...owners], 2, "second", [anonymous.address, ...owners], recoveryAddr, {value:0});
+  const create2 = await Contract.createContract([...owners], 2, "second", [anonymous.address, ...owners], recoveryAddr, BLOCKLOCK, {value:0});
 
   // Retrieve the contract's address from Factory calling the method `contracts()` and passing the index number
   const addr2 = await Contract.contracts(1);
   console.log("[Trusty2 address]: ", addr2);
 
   // Create a third Trusty
-  const create3 = await Contract.createContract([...owners], 2, "third", [...owners], recoveryAddr, {value:0}); 
+  const create3 = await Contract.createContract([...owners], 2, "third", [...owners], recoveryAddr, BLOCKLOCK, {value:0}); 
   const addr3 = await Contract.contracts(2);
   console.log("[Trusty3 address]: ", addr3);
 
   // Create a Trusty whose owners are 1 Externally Owned Account (with private keys) plus the previous Trusties created (without private keys) resulting in a chained tree of Trusty multisignatures 
-  const createMix = await Contract.createContract([addr, addr2, addr3], 2, "mixed", [addr, addr2, addr3], recoveryAddr, {value:0}); 
+  const createMix = await Contract.createContract([addr, addr2, addr3], 2, "mixed", [addr, addr2, addr3], recoveryAddr, BLOCKLOCK, {value:0}); 
   const trustyMixAddr = await Contract.contracts(3);
   console.log("[TrustyMIX address]: ", trustyMixAddr);
 

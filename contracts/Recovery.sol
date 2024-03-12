@@ -58,6 +58,7 @@ contract Recovery {
 
     // Absolute_timelock
     uint offset = 120; // Blocks required against an eventual fork
+    uint private blocklock;
     uint public absolute_timelock;
 
     // Recovery
@@ -109,7 +110,8 @@ contract Recovery {
         uint _numConfirmationsRequired, 
         string memory _id, 
         address[] memory whitelist, 
-        address _recoveryTrusty
+        address _recoveryTrusty,
+        uint _blocklock
     ) {
         require(_owners.length > 0, "owners required");
 
@@ -149,6 +151,8 @@ contract Recovery {
         require(_recoveryTrusty != address(0), "invalid Recovery Trusty address");
         recoveryTrusty = _recoveryTrusty;
 
+        blocklock = _blocklock;
+
         unlock();
     }
 
@@ -156,14 +160,14 @@ contract Recovery {
     * @notice Method used to update and reset the absolute timelock. Triggered after Transaction execution
     */
     function unlock() private {
-        absolute_timelock = block.number + offset + 28800;
+        absolute_timelock = block.number + offset + blocklock;
     }
 
     /**
     * @notice Method used to update and reset the absolute timelock. Triggered after Transaction execution
     */
     function POR() external onlyRecover notUnlocked {
-        absolute_timelock = block.number + offset + 28800;
+        absolute_timelock = block.number + offset + blocklock;
     }
 
     /**

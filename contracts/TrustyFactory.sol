@@ -52,12 +52,12 @@ contract TrustyFactory is Ownable {
     * @param _owners Array of owners' addresses
     * @param _nTX Minimum number of confirmations required to execute a transaction
     */
-    function createContract(address[] memory _owners, uint _nTX, string memory _id, address[] memory _whitelist, address _recovery) payable public notWhitelisted {
+    function createContract(address[] memory _owners, uint _nTX, string memory _id, address[] memory _whitelist, address _recovery, uint _blocklock) payable public notWhitelisted {
         if(_priceEnabled) {
             require(msg.value >= _price, "Ether sent is not enough");
         }
 
-        Trusty trusty = new Trusty(_owners, _nTX, _id, _whitelist, _recovery);
+        Trusty trusty = new Trusty(_owners, _nTX, _id, _whitelist, _recovery, _blocklock);
         contracts.push(trusty);
 
         trustyID[totalTrusty] = _id;

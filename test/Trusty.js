@@ -23,6 +23,8 @@ let Erc20 = null;
 const ethDecimals = 10**18;
 const trustyPrice = ethers.utils.parseEther("0");
 
+const BLOCKLOCK = 28800;
+
 /**
  * [Trusty Multisignature Contract]: 
  * interface,provider,signer,callStatic,estimateGas,functions,populateTransaction,filters,
@@ -64,14 +66,14 @@ describe("Trusty tests", async () => {
     // Handle the Trusty Multisignature single deploy for each test that needs an istance to run and fill the necessary accounts signers
     const deployTrustySingle = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
         const Musig = await ethers.getContractFactory("Trusty");
-        const musig = await Musig.deploy(owners, threshold, id, whitelist, recovery, { value: 0 });
+        const musig = await Musig.deploy(owners, threshold, id, whitelist, recovery, BLOCKLOCK, { value: 0 });
         Trusty = musig
     }
 
     // Handle the Trusty Multisignature Factory deploy for each test that needs an istance to run and fill the necessary accounts signers
     const deployRecovery = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
         const MusigRecovery = await ethers.getContractFactory("Recovery");
-        const musigRecovery = await MusigRecovery.deploy(owners, threshold, id, whitelist, recovery, { value: 0 });
+        const musigRecovery = await MusigRecovery.deploy(owners, threshold, id, whitelist, recovery, BLOCKLOCK, { value: 0 });
         Recovery = musigRecovery
     }
 
@@ -124,7 +126,7 @@ describe("Trusty tests", async () => {
 
             expect(totalPre).equals(0)
 
-            const create = await Factory.createContract(owners, 1, "", [...owners], accounts.owner.address, {value: trustyPrice})
+            const create = await Factory.createContract(owners, 1, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})
 
             //await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
 
@@ -144,7 +146,7 @@ describe("Trusty tests", async () => {
             
             expect(totalPre).equals(0)
 
-            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
 
             const totalPost = await Factory.totalTrusty()
 
@@ -164,7 +166,7 @@ describe("Trusty tests", async () => {
             
             expect(totalPre).equals(0)
 
-            const create = await Factory.createContract(owners, 3, "", [...owners], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 3, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
 
             const totalPost = await Factory.totalTrusty()
 
@@ -184,7 +186,7 @@ describe("Trusty tests", async () => {
 
             expect(totalPre).equals(0)
 
-            const create = await Factory.createContract(owners, 1, "", [...owners], accounts.owner.address, {value: trustyPrice})
+            const create = await Factory.createContract(owners, 1, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})
 
             //await expect(Factory.createContract(owners, 1, {value: trustyPrice})).to.be.reverted
 
@@ -200,7 +202,7 @@ describe("Trusty tests", async () => {
 
             const owners = [];
 
-            await expect(Factory.createContract(owners, 0, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners, 0, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
         });        
 
         it("should revert with 0 threshold test",async () => {
@@ -208,7 +210,7 @@ describe("Trusty tests", async () => {
 
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
 
-            await expect(Factory.createContract(owners, 0, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners, 0, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
         });        
 
         it("should revert with more threshold than owners test",async () => {
@@ -216,7 +218,7 @@ describe("Trusty tests", async () => {
 
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
 
-            await expect(Factory.createContract(owners , 4, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners , 4, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
         });
 
         it("should revert with duplicated owners test",async () => {
@@ -224,19 +226,19 @@ describe("Trusty tests", async () => {
 
             let owners = [accounts.owner.address, accounts.randomAccount.address, accounts.randomAccount.address];
 
-            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
 
             owners = [accounts.owner.address, accounts.owner.address, accounts.randomAccount.address];
 
-            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
 
             owners = [accounts.owner.address, accounts.randomAccount.address, accounts.randomAccount.address];
 
-            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
 
             owners = [accounts.owner.address, accounts.owner.address, accounts.owner.address];
 
-            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
         });
 
         it("should revert using address 0x0 test",async () => {
@@ -244,7 +246,7 @@ describe("Trusty tests", async () => {
 
             const owners = [accounts.owner.address, accounts.randomAccount.address, "0x0000000000000000000000000000000000000000"];
 
-            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, {value: trustyPrice})).to.be.reverted
+            await expect(Factory.createContract(owners, 3, "", [], accounts.owner.address, BLOCKLOCK, {value: trustyPrice})).to.be.reverted
         });
     });
 
@@ -253,7 +255,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
-            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -270,7 +272,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
-            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -289,7 +291,7 @@ describe("Trusty tests", async () => {
             // WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
 
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1");
@@ -331,7 +333,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -377,7 +379,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -418,7 +420,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners,accounts.anonymous.address]);
-            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -435,7 +437,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -465,7 +467,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -495,7 +497,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners,accounts.anonymous.address]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -524,7 +526,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -560,7 +562,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners,accounts.anonymous.address]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -596,7 +598,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -636,7 +638,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
-            const create = await Factory.createContract(owners, 3, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 3, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -672,7 +674,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners,accounts.anonymous.address]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -711,7 +713,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -754,7 +756,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -808,7 +810,7 @@ describe("Trusty tests", async () => {
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
             
 
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
 
@@ -830,7 +832,7 @@ describe("Trusty tests", async () => {
             // FACTORY WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
 
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1");
@@ -876,7 +878,7 @@ describe("Trusty tests", async () => {
             // Factory WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
 
-            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [...owners], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1");
@@ -900,7 +902,7 @@ describe("Trusty tests", async () => {
             // WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
             
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1");
@@ -928,7 +930,7 @@ describe("Trusty tests", async () => {
             // WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
             
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1");
@@ -964,7 +966,7 @@ describe("Trusty tests", async () => {
             // WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
             
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1",accounts.erc20contract.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1",accounts.erc20contract.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1");
@@ -1000,7 +1002,7 @@ describe("Trusty tests", async () => {
             // WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
             
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1",accounts.erc20contract.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1",accounts.erc20contract.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("0.1");
@@ -1041,7 +1043,7 @@ describe("Trusty tests", async () => {
             // WHITELIST
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist(owners);
             //0xeDaCEf763B85597A517061D276D61947610411D1
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address, accounts.erc20contract.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address, accounts.erc20contract.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             //const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address, accounts.erc20contract.address, "0xeDaCEf763B85597A517061D276D61947610411D1"], {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
@@ -1068,7 +1070,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -1111,7 +1113,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -1154,7 +1156,7 @@ describe("Trusty tests", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
 
             const amount = ethers.utils.parseEther("1")
@@ -1204,7 +1206,7 @@ describe("Trusty tests", async () => {
             
             
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1")
@@ -1277,7 +1279,7 @@ describe("Trusty tests", async () => {
             //console.log("[RECOVERY]",Recovery.address);
             
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1")
@@ -1388,7 +1390,7 @@ describe("Trusty tests", async () => {
             //console.log("[RECOVERY]",Recovery.address);
             
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1")
@@ -1475,7 +1477,7 @@ describe("Trusty tests", async () => {
             
             
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], Recovery.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1")
@@ -1550,7 +1552,7 @@ describe("Trusty tests", async () => {
             
             
             const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
-            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, {value: trustyPrice});
+            const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
             const trustyAddr = await Factory.contracts(0);
             
             const amount = ethers.utils.parseEther("1")
