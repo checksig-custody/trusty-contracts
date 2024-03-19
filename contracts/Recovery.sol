@@ -153,7 +153,7 @@ contract Recovery {
 
         blocklock = _blocklock;
 
-        unlock();
+        //unlock();
     }
 
     /**
@@ -207,7 +207,7 @@ contract Recovery {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner isWhitelisted(_to) notBlacklisted(_to) {
-        require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
+        //require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
         this.checkData(_data);
 
         uint txIndex = transactions.length;
@@ -272,11 +272,12 @@ contract Recovery {
             transaction.numConfirmations >= numConfirmationsRequired,
             "cannot execute tx due to number of confirmation required"
         );
-
+        /*
         if (transaction.blockHeight + transaction.timeLock > block.number) {
             int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
             revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
         }
+        */
 
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
@@ -285,7 +286,7 @@ contract Recovery {
 
         transaction.executed = true;
 
-        unlock();
+        //unlock();
         
         emit ExecuteTransaction(tx.origin, _txIndex);
     }    
