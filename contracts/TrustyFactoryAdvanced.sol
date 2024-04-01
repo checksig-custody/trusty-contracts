@@ -4,18 +4,21 @@ pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./Trusty.sol";
+import "./TrustySimple.sol";
+import "./TrustyAdvanced.sol";
 
 /**
- * @title Trusty Factory Multisignature
+ * @title Trusty Factory Advanced Multisignature
  * @author Ramzi Bougammoura
  * @notice This contract is the Trusty Factory multisignatures deployer
  * @dev Most function calls are meant to be proxied from the Factory to the Trusty owned
  * Copyright (c) 2024 Ramzi Bougammoura
  */
-contract TrustyFactory is Ownable {
+contract TrustyFactoryAdvanced is Ownable {
 
     // Trusty indexed array
-    Trusty[] public contracts;
+    //TrustySimple[] public contracts;
+    TrustyAdvanced[] public contracts;
 
     uint256 public totalTrusty = 0;
 
@@ -56,8 +59,9 @@ contract TrustyFactory is Ownable {
         if(_priceEnabled) {
             require(msg.value >= _price, "Ether sent is not enough");
         }
-
-        Trusty trusty = new Trusty(_owners, _nTX, _id, _whitelist, _recovery, _blocklock);
+        TrustyAdvanced trusty = new TrustyAdvanced(_owners, _nTX, _id, _whitelist, _recovery, _blocklock);
+        //TrustySimple trusty = new TrustySimple(_owners, _nTX, _id);
+        
         contracts.push(trusty);
 
         trustyID[totalTrusty] = _id;
@@ -77,6 +81,37 @@ contract TrustyFactory is Ownable {
         totalTrusty++;
     }
 
+    /**
+    * @notice This method is used to create a Trusty multisignature
+    * @param _owners Array of owners' addresses
+    * @param _nTX Minimum number of confirmations required to execute a transaction
+    
+    function createContractB(address[] memory _owners, uint _nTX, string memory _id, address[] memory _whitelist, address _recovery, uint _blocklock) payable public notWhitelisted {
+        if(_priceEnabled) {
+            require(msg.value >= _price, "Ether sent is not enough");
+        }
+
+        //TrustyAdvanced trusty = new TrustyAdvanced(_owners, _nTX, _id, _whitelist, _recovery, _blocklock);
+        
+        contractsAdvanced.push(trusty);
+
+        trustyID[totalTrusty] = _id;
+
+        whitelistedAddresses[address(trusty)] = true;
+        numAddressesWhitelisted++;
+
+        for (uint i = 0; i < _owners.length; i++) {
+            if(!whitelistedAddresses[_owners[i]]) {
+                whitelistedAddresses[_owners[i]] = true;
+                numAddressesWhitelisted++;
+            }            
+        }
+
+        trustyOwner[totalTrusty] = _owners;
+
+        totalTrusty++;
+    }
+    */
     /**
     * @notice This method is used to make a deposit on a Trusty multisignature
     * @param _contractIndex The Trusty contract index that will be funded

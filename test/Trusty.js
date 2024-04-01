@@ -63,6 +63,13 @@ describe("Trusty tests", async () => {
         Factory = musigFactory
     }
 
+    const deployFactoryAdvanced = async () => {    
+        istantiateAccounts()
+        const MusigFactory = await ethers.getContractFactory("TrustyFactoryAdvanced");
+        const musigFactory = await MusigFactory.deploy({ value: 0 });
+        //Factory = musigFactory
+    }
+
     // Handle the Trusty Multisignature single deploy for each test that needs an istance to run and fill the necessary accounts signers
     const deployTrustySingle = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
         const Musig = await ethers.getContractFactory("Trusty");
@@ -70,10 +77,22 @@ describe("Trusty tests", async () => {
         Trusty = musig
     }
 
+    const deployTrustySimple = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
+        const Musig = await ethers.getContractFactory("TrustySimple");
+        const musig = await Musig.deploy(owners, threshold, id, { value: 0 });
+        //Trusty = musig
+    }
+
+    const deployTrustyAdvanced = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
+        const Musig = await ethers.getContractFactory("TrustyAdvanced");
+        const musig = await Musig.deploy(owners, threshold, id, whitelist, recovery, BLOCKLOCK, { value: 0 });
+        //Trusty = musig
+    }
+
     // Handle the Trusty Multisignature Factory deploy for each test that needs an istance to run and fill the necessary accounts signers
     const deployRecovery = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
         const MusigRecovery = await ethers.getContractFactory("Recovery");
-        const musigRecovery = await MusigRecovery.deploy(owners, threshold, id, whitelist, recovery, BLOCKLOCK, { value: 0 });
+        const musigRecovery = await MusigRecovery.deploy(owners, threshold, id, { value: 0 });
         Recovery = musigRecovery
     }
 
@@ -1250,7 +1269,7 @@ describe("Trusty tests", async () => {
             await recoverWhitelist.wait();
 
             //0xce746024 //0x7c0f1ee7
-            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024", 0);
+            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
             await recover.wait()
 
             const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
@@ -1333,7 +1352,7 @@ describe("Trusty tests", async () => {
             await recoverWhitelist.wait();
 
             // ETH Recovery //0xce746024 //0x7c0f1ee7
-            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024", 0);
+            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
             await recover.wait()
 
             const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
@@ -1356,7 +1375,7 @@ describe("Trusty tests", async () => {
 
             // ERC20 Recovery
             //const erc20recover = await Recovery.submitTransaction(trustyAddr, 0, `0x8980f11f000000000000000000000000${Erc20.address.slice(2,Erc20.address.length)}000000000000000000000000000000000000000000${hre.ethers.utils.hexlify(erc20amount).slice(2)}`, 0);
-            const erc20recover = await Recovery.submitTransaction(trustyAddr, 0, `0x9e8c708e000000000000000000000000${Erc20.address.slice(2,Erc20.address.length)}`, 0);
+            const erc20recover = await Recovery.submitTransaction(trustyAddr, 0, `0x9e8c708e000000000000000000000000${Erc20.address.slice(2,Erc20.address.length)}`);
             await erc20recover.wait()
 
             const erc20confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(1);
@@ -1445,7 +1464,7 @@ describe("Trusty tests", async () => {
 
             
             // ETH POR //0x5c470ecb //0xa69df4b5
-            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0x5c470ecb", 0);
+            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0x5c470ecb");
             await recover.wait()
 
             const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
@@ -1520,7 +1539,7 @@ describe("Trusty tests", async () => {
                 await recoverWhitelist.wait();
 
                 //0xce746024 //0x7c0f1ee7
-                const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024", 0);
+                const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
                 await recover.wait()
 
                 const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
@@ -1595,7 +1614,7 @@ describe("Trusty tests", async () => {
                 await recoverWhitelist.wait();
 
                 //0xce746024 //0x7c0f1ee7
-                const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024", 0);
+                const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
                 await recover.wait()
 
                 const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
@@ -1700,4 +1719,17 @@ describe("Trusty tests", async () => {
             expect(txGet[3]).to.equal(true)
         });
     });
+
+    describe("Deploys test", async () => {
+        it("deploy all test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await deployTrustySingle(owners,1, "Single", [...owners], accounts.owner.address);
+            await deployFactory()
+            await deployRecovery(owners,2, "RECOVERY", [...owners], accounts.owner.address);
+            await deployTrustySimple(owners,1,"Simple")
+            await deployTrustyAdvanced(owners,1,"Advanced",owners,accounts.owner.address,0)
+            await deployFactoryAdvanced()
+        })
+    })
 });

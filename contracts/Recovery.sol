@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.25;
 
 /**
  * @title Trusty Recovery Multisignature
@@ -40,7 +40,6 @@ contract Recovery {
         uint numConfirmations;     
         uint blockHeight;
         uint timestamp;
-        uint timeLock;   
     }
 
     // mapping from tx index => owner => bool
@@ -55,24 +54,6 @@ contract Recovery {
     // blacklist
     mapping(address => bool) public blacklistedToAddresses;
     address[] public blacklistedAddressesList;
-
-    // Absolute_timelock
-    uint offset = 120; // Blocks required against an eventual fork
-    uint private blocklock;
-    uint public absolute_timelock;
-
-    // Recovery
-    address public recoveryTrusty;
-
-    modifier notUnlocked() {
-        require(block.number >= absolute_timelock,"Trusty not yet unlocked!");
-        _;
-    }
-
-    modifier onlyRecover() {
-        require(msg.sender == recoveryTrusty || tx.origin == recoveryTrusty, "Not allowed!");
-        _;
-    }
 
     modifier isWhitelisted(address toAddress) {
         require(whitelistedToAddresses[toAddress], "Address/Contract not in Trusty Whitelist!");
@@ -108,14 +89,9 @@ contract Recovery {
     constructor(
         address[] memory _owners, 
         uint _numConfirmationsRequired, 
-        string memory _id, 
-        address[] memory whitelist, 
-        address _recoveryTrusty,
-        uint _blocklock
+        string memory _id
     ) {
         require(_owners.length > 0, "owners required");
-
-        require(whitelist.length > 0, "a minimum whitelist is required or the funds will be locked forever");
         
         require(
             _numConfirmationsRequired > 0 &&
@@ -142,61 +118,9 @@ contract Recovery {
         whitelistedToAddresses[address(this)] = true;
         whitelistedAddressesList.push(address(this));
 
-        addAddressToWhitelist(whitelist);
-
         numConfirmationsRequired = _numConfirmationsRequired;
 
         id = _id;
-
-        require(_recoveryTrusty != address(0), "invalid Recovery Trusty address");
-        recoveryTrusty = _recoveryTrusty;
-
-        blocklock = _blocklock;
-
-        //unlock();
-    }
-
-    /**
-    * @notice Method used to update and reset the absolute timelock. Triggered after Transaction execution
-    */
-    function unlock() private {
-        absolute_timelock = block.number + offset + blocklock;
-    }
-
-    /**
-    * @notice Method used to update and reset the absolute timelock. Triggered after Transaction execution
-    */
-    function POR() external onlyRecover notUnlocked {
-        absolute_timelock = block.number + offset + blocklock;
-    }
-
-    /**
-    * @notice Method used by recovery address in Recovery scenario
-    */
-    function recover() public onlyRecover notUnlocked {
-        uint amount = address(this).balance;        
-        (bool success, ) = msg.sender.call{value: amount}("");
-        require(success, "recover failed");
-    }
-
-    /**
-    * @notice Method used by recovery address in ERC20 Recovery scenario
-    */
-    function recoverERC20(address _token, uint256 _amount) public onlyRecover notUnlocked {        
-        (bytes memory _dataApprove,) = encodeRecover(_amount);
-        (,bytes memory _dataTransfer) = encodeRecover(_amount);
-        (bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
-        require(approveSuccess, "recoverERC20 approve failed");
-        (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
-        require(transferSuccess, "recoverERC20 transfer failed");
-    }
-
-    function encodeRecover(uint256 _amount) private view returns (bytes memory, bytes memory) {
-        //bytes memory encoded = abi.encodeWithSignature("callMe(uint256)", 123);
-        address _recover = recoveryTrusty;
-        bytes memory approve = abi.encodeWithSignature("approve(address,uint256)", _recover, _amount);
-        bytes memory transfer = abi.encodeWithSignature("transfer(address,uint256)", _recover, _amount);
-        return (approve,transfer);
     }
 
     /**
@@ -206,10 +130,7 @@ contract Recovery {
     * @param _data Optional data field or calldata to another contract
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
-    function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner isWhitelisted(_to) notBlacklisted(_to) {
-        //require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
-        this.checkData(_data);
-
+    function submitTransaction(address _to, uint _value, bytes calldata _data) public onlyOwner isWhitelisted(_to) notBlacklisted(_to) {
         uint txIndex = transactions.length;
 
         transactions.push(
@@ -220,8 +141,7 @@ contract Recovery {
                 executed: false,
                 numConfirmations: 0,
                 blockHeight: block.number,
-                timestamp: block.timestamp,
-                timeLock: _timeLock
+                timestamp: block.timestamp
             })
         );
 
@@ -266,18 +186,11 @@ contract Recovery {
         Transaction storage transaction = transactions[_txIndex];
 
         require(!blacklistedToAddresses[transaction.to], "Cannot execute, address/contract is blacklisted!");
-        this.checkData(transaction.data);
         
         require(
             transaction.numConfirmations >= numConfirmationsRequired,
             "cannot execute tx due to number of confirmation required"
         );
-        /*
-        if (transaction.blockHeight + transaction.timeLock > block.number) {
-            int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
-            revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
-        }
-        */
 
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
@@ -285,8 +198,6 @@ contract Recovery {
         require(success, "tx failed");
 
         transaction.executed = true;
-
-        //unlock();
         
         emit ExecuteTransaction(tx.origin, _txIndex);
     }    
@@ -322,7 +233,7 @@ contract Recovery {
     * @param _txIndex The index of the transaction that needs to be retrieved
     * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timeLock) {
+    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight) {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
@@ -331,8 +242,7 @@ contract Recovery {
             transaction.data,
             transaction.executed,
             transaction.numConfirmations,
-            transaction.blockHeight,
-            transaction.timeLock
+            transaction.blockHeight
         );
     }
 
@@ -407,7 +317,7 @@ contract Recovery {
 
     /**
     * @notice Utility function to decode and check erc20 serialized calldata
-    */
+    
     function checkData(bytes calldata encodedData) external view returns (bool) {
         uint len = encodedData.length;
 
@@ -441,4 +351,5 @@ contract Recovery {
         }
         return decoded;
     }
+    */
 }

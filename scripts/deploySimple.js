@@ -21,31 +21,13 @@ async function main() {
     owners.push(owner);
   }
 
-  const whitelist = []
-
-  const address = prompt(`Address to whitelist: `);
-  if(!ethers.utils.isAddress(address)){throw "You must enter a valid string address"}
-  whitelist.push(address);
-
-  while(prompt(`Would you like to add more addresses to whitelist? [y] or [press any button] to exit: `)==="y"?true:false) {
-    const address = prompt(`Address to whitelist: `);
-    if(!ethers.utils.isAddress(address)){throw "You must enter a valid string address"}
-    whitelist.push(address);
-  }
-
-  const recovery = prompt(`Insert the RECOVERY address: `)
-  if(!ethers.utils.isAddress(recovery)){throw "You must enter a valid string address"}
-
-  const blocklock = parseInt(prompt('How many blocks until RECOVERY mode enabled? '));
-  if(isNaN(blocklock)) {throw `You must use a valid number: ${parseInt(blocklock)}`}
-
   const name = prompt(`Insert a name for your Trusty or leave blank `)
 
   /*
   A ContractFactory in ethers.js is an abstraction used to deploy new smart contracts,
   so exchangeContract here is a factory for instances of our Exchange contract.
   */
-  const trustyContract = await ethers.getContractFactory("Trusty");
+  const trustyContract = await ethers.getContractFactory("TrustySimple");
 
   const awareness = prompt('ARE YOU SURE YOU WANT TO DEPLOY? [deploy] or [press any button] to exit: ')==="deploy"?true:false;
   if(!awareness) {
@@ -53,11 +35,11 @@ async function main() {
   }
 
   // here we deploy the contract
-  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, whitelist, recovery, blocklock);
+  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name);
   await deployedTrustyContract.deployed();
 
   // print the address of the deployed contract
-  console.log("Trusty Contract Address:", deployedTrustyContract.address);
+  console.log("TrustySimple Contract Address:", deployedTrustyContract.address);
 }
 
 // Call the main function and catch if there is any error

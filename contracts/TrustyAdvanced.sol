@@ -3,13 +3,13 @@
 pragma solidity ^0.8.25;
 
 /**
- * @title Trusty Multisignature
+ * @title Trusty Advanced Multisignature
  * @author Ramzi Bougammoura
  * @notice This contract is inherithed by Trusty Factory deployer
  * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
-contract Trusty {
+contract TrustyAdvanced {
     string public id;
 
     //Events
@@ -75,7 +75,7 @@ contract Trusty {
     }
 
     modifier onlyRecover() {
-        require(msg.sender == recoveryTrusty, "Not allowed!");        
+        require(msg.sender == recoveryTrusty, "Not allowed!");
         _;
     }
 
@@ -90,7 +90,7 @@ contract Trusty {
     }
 
     modifier onlyOwner() {
-        require(isOwner[msg.sender] || isOwner[tx.origin], "not owner");
+        require(isOwner[msg.sender], "not owner"); //
         _;
     }
 
@@ -105,7 +105,7 @@ contract Trusty {
     }
 
     modifier notConfirmed(uint _txIndex) {
-        require(!isConfirmed[_txIndex][tx.origin], "tx already confirmed");
+        require(!isConfirmed[_txIndex][msg.sender], "tx already confirmed");
         _;
     }
 
@@ -237,7 +237,7 @@ contract Trusty {
             })
         );
 
-        emit SubmitTransaction(tx.origin, txIndex, _to, _value, _data);
+        emit SubmitTransaction(msg.sender, txIndex, _to, _value, _data);
     }
 
     /**
@@ -248,9 +248,9 @@ contract Trusty {
     function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
         transaction.numConfirmations += 1;
-        isConfirmed[_txIndex][tx.origin] = true;
+        isConfirmed[_txIndex][msg.sender] = true;
 
-        emit ConfirmTransaction(tx.origin, _txIndex);
+        emit ConfirmTransaction(msg.sender, _txIndex);
     }
 
     /**
@@ -261,12 +261,12 @@ contract Trusty {
     function revokeConfirmation(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
 
-        require(isConfirmed[_txIndex][tx.origin], "tx not confirmed");
+        require(isConfirmed[_txIndex][msg.sender], "tx not confirmed");
 
         transaction.numConfirmations -= 1;
-        isConfirmed[_txIndex][tx.origin] = false;
+        isConfirmed[_txIndex][msg.sender] = false;
 
-        emit RevokeConfirmation(tx.origin, _txIndex);
+        emit RevokeConfirmation(msg.sender, _txIndex);
     }
 
     /**
@@ -299,7 +299,7 @@ contract Trusty {
 
         unlock();
         
-        emit ExecuteTransaction(tx.origin, _txIndex);
+        emit ExecuteTransaction(msg.sender, _txIndex);
     }    
 
     /**
@@ -369,6 +369,19 @@ contract Trusty {
     }
 
     /**
+    * @notice addAddressToRecoverWhitelist - This function adds the address of the sender to the whitelist
+    * @custom:param `address[]` An array of addresses to be whitelisted
+    * @custom:owner Can be called by owner
+    */
+    function addAddressToRecoveryWhitelist(address[] memory addresses) public onlyOwner {        
+        for (uint i = 0; i < addresses.length; i++) {
+            // Add the address which called the function to the whitelistedAddress array
+            whitelistedToAddresses[addresses[i]] = true;
+            whitelistedAddressesList.push(addresses[i]);
+        }        
+    }
+
+    /**
     * @notice This method is used by the Trusty's owner to get the blacklisted addresses
     * @custom:owner Can be called by owner
     */
@@ -393,14 +406,14 @@ contract Trusty {
     * @notice Fallback function triggered when the contract is receiving Ether and msg.data is empty
     */
     receive() external payable {
-        emit Deposit(tx.origin, msg.value, address(this).balance);
+        emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
     /**
     * @notice Fallback function triggered when the contract is receiving Ether and msg.data is not empty
     */
     fallback() external payable {
-        emit Deposit(tx.origin, msg.value, address(this).balance);
+        emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
     /**

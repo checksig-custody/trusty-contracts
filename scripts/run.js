@@ -89,7 +89,7 @@ const main = async () => {
   //const recoveryAddr = await Contract.contracts(0);
 
   //const recovery = await ContractTrusty.deploy(owners, 2, "RECOVERY TRUSTY", owners, owner.address, {value:0});
-  const recovery = await ContractRecovery.deploy(owners, 2, "RECOVERY TRUSTY", owners, owner.address, BLOCKLOCK, {value:0});
+  const recovery = await ContractRecovery.deploy(owners, 2, "RECOVERY TRUSTY", {value:0});
   await recovery.deployed()
   const recoveryAddr = recovery.address;
 
@@ -238,7 +238,7 @@ const main = async () => {
   
   //0xce746024
   //const recover = await recovery.submitTransaction(addr , 0, Buffer.from(""), 0);
-  const recover = await recovery.submitTransaction(addr , 0, "0xce746024", 0); //ETH native
+  const recover = await recovery.submitTransaction(addr , 0, "0xce746024"); //ETH native
   //const recover = await recovery.submitTransaction(addr , 0, "0x7c0f1ee7", 0); //ERC20
   await recover.wait();
 
@@ -284,7 +284,7 @@ const main = async () => {
   //0x8980f11f000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C900000000000000000000000000000000000000000052b7d2dcc80cd2e4000000
   //0x8980f11f000000000000000000000000326C977E6efc84E512bB9C30f76E30c160eD06FB00000000000000000000000000000000000000000052b7d2cee7562000000000
   //0x9e8c708e000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C9
-  const recoverErc20 = await recovery.submitTransaction(addr , 0, "0x9e8c708e000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C9", 0); //ERC20
+  const recoverErc20 = await recovery.submitTransaction(addr , 0, "0x9e8c708e000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C9"); //ERC20
   await recoverErc20.wait();
 
   const recoConfirmErc20 = await recovery.connect(other).confirmTransaction(1);

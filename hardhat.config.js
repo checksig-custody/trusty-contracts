@@ -5,7 +5,12 @@ require("dotenv").config({ path: ".env" });
 const prompt = require('prompt-sync')();
 
 let input = false
-if(process.argv.length === 2 && process.argv[1].includes("scripts/deploy.js") || process.argv[1].includes("scripts/deploySingle.js") || process.argv[1].includes("scripts/deployRecovery.js")){
+if(
+  process.argv.length === 2 && process.argv[1].includes("scripts/deploy.js") || 
+  process.argv[1].includes("scripts/deploySimple.js") || 
+  process.argv[1].includes("scripts/deployRecovery.js") ||
+  process.argv[1].includes("scripts/deployAdvanced.js")
+  ){
   input = prompt('Would you like to use HW Ledger? [y] or [press any button] to skip: ')==="y"?true:false;
 }
 
@@ -55,7 +60,7 @@ if(useLedger) {
   module.exports = {
     defaultNetwork: "hardhat",
     solidity: {
-      version:"0.8.24",
+      version:"0.8.25",
       settings: {
         optimizer: {
           enabled: true,
@@ -129,7 +134,7 @@ if(useLedger) {
   module.exports = {
     defaultNetwork: "hardhat",
     solidity: {
-      version:"0.8.24",
+      version:"0.8.25",
       settings: {
         optimizer: {
           enabled: true,
