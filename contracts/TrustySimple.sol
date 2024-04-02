@@ -44,10 +44,6 @@ contract TrustySimple {
 
     Transaction[] public transactions;
 
-    // whitelist
-    mapping(address => bool) public whitelistedToAddresses;
-    address[] public whitelistedAddressesList;
-
     // blacklist
     mapping(address => bool) public blacklistedToAddresses;
     address[] public blacklistedAddressesList;
@@ -99,16 +95,8 @@ contract TrustySimple {
 
             isOwner[owner] = true;
 
-            // Owners Auto-whitelisting
-            //whitelistedToAddresses[owner] = true;
-            //whitelistedAddressesList.push(owner);
-
             owners.push(owner);
         }
-
-        // Trusty Auto-Whitelist
-        whitelistedToAddresses[address(this)] = true;
-        whitelistedAddressesList.push(address(this));
 
         numConfirmationsRequired = _numConfirmationsRequired;
 
@@ -123,8 +111,6 @@ contract TrustySimple {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data) public onlyOwner notBlacklisted(_to) {
-        //require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
-        //this.checkData(_data);
 
         uint txIndex = transactions.length;
 
@@ -239,28 +225,7 @@ contract TrustySimple {
             transaction.blockHeight
             //transaction.timeLock
         );
-    }
-
-    /**
-    * @notice This method is used by the Trusty's owner to get the whitelisted addresses
-    * @custom:owner Can be called by owner
-    */
-    function getWhitelist() public view onlyOwner returns(address[] memory) {
-        return whitelistedAddressesList;
-    }
-
-    /**
-    * @notice addAddressToWhitelist - This function adds the address of the sender to the whitelist
-    * @custom:param `address[]` An array of addresses to be whitelisted
-    * @custom:owner Can be called by owner
-    */
-    function addAddressToWhitelist(address[] memory addresses) public onlyOwner {
-        for (uint i = 0; i < addresses.length; i++) {
-            require(!whitelistedToAddresses[addresses[i]], "Each address must be unique to be in whitelist");
-            whitelistedToAddresses[addresses[i]] = true;
-            whitelistedAddressesList.push(addresses[i]);
-        }        
-    }    
+    } 
 
     /**
     * @notice This method is used by the Trusty's owner to get the blacklisted addresses
