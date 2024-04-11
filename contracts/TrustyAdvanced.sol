@@ -30,6 +30,8 @@ contract TrustyAdvanced {
     // Variable Slots
     address[] public owners;
     mapping(address => bool) public isOwner;
+    address[] public authorizers;
+    mapping(address => bool) public isAuthorizer;
     uint public numConfirmationsRequired;
 
     struct Transaction {
@@ -91,6 +93,11 @@ contract TrustyAdvanced {
 
     modifier onlyOwner() {
         require(isOwner[msg.sender], "not owner"); //
+        _;
+    }
+
+    modifier onlyAuthorizer() {
+        require(isAuthorizer[msg.sender], "not an authorizer"); //
         _;
     }
 
