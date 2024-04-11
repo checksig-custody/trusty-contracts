@@ -9,7 +9,11 @@ async function main() {
   const nOwners = parseInt(prompt('How many owners will manage the Trusty? '));
   if(isNaN(nOwners)) {throw `You must use a valid number: ${parseInt(nOwners)}`}
 
+  const nAuthorizers = parseInt(prompt('How many authorizers will manage the Trusty? '));
+  if(isNaN(nAuthorizers)) {throw `You must use a valid number: ${parseInt(nAuthorizers)}`}
+
   const owners = []
+  const authorizers = []
 
   if(confirmations === 0 || nOwners === 0 || confirmations < 1 || confirmations > nOwners) {
     throw `Confirmations must be greater than 1 and less than or equal to the numbers of owners: (1 < ${confirmations} <= ${nOwners}) is not a valid expression`
@@ -19,6 +23,12 @@ async function main() {
     const owner = prompt(`Address of the ${i}th owner: `);
     if(!ethers.utils.isAddress(owner)){throw "You must enter a valid string address"}
     owners.push(owner);
+  }
+
+  for (var i = 0; i < nAuthorizers; i++){
+    const authorizer = prompt(`Address of the ${i}th authorizer: `);
+    if(!ethers.utils.isAddress(authorizer)){throw "You must enter a valid string address"}
+    authorizers.push(authorizer);
   }
 
   const whitelist = []
@@ -53,7 +63,7 @@ async function main() {
   }
 
   // here we deploy the contract
-  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, whitelist, recovery, blocklock);
+  const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, whitelist, recovery, blocklock, authorizers);
   await deployedTrustyContract.deployed();
 
   // print the address of the deployed contract
