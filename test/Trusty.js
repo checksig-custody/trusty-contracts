@@ -13,12 +13,24 @@ const accounts = {
     other: "",
     anonymous: "",
     erc20contract: "",
-    recovery: ""
+    recovery: "",
+    auth1: "",
+    auth2: "",
+    auth3: "",
+    fede1: "",
+    fede2: "",
+    fede3: "",
+    fede4: "",
+    fede5: "",
+    fede6: "",
 }
+
 let Factory = null;
 let Trusty = null;
 let Recovery = null;
 let Erc20 = null;
+let Single = null;
+let Advanced = null;
 
 const ethDecimals = 10**18;
 const trustyPrice = ethers.utils.parseEther("0");
@@ -43,7 +55,7 @@ const BLOCKLOCK = 28800;
 describe("Trusty tests", async () => {
     // Create various accounts signers for testing purpose
     const istantiateAccounts = async () => {
-        const [owner, otherAccount, otherOwner, otherOwner1, otherOwner2, randomAccount, other, anonymous, erc20contract] = await ethers.getSigners();
+        const [owner, otherAccount, otherOwner, otherOwner1, otherOwner2, randomAccount, other, anonymous, erc20contract, auth1, auth2, auth3, fede1, fede2, fede3, fede4, fede5, fede6] = await ethers.getSigners();
         accounts.owner = owner
         accounts.otherAccount = otherAccount
         accounts.otherOwner = otherOwner
@@ -53,6 +65,15 @@ describe("Trusty tests", async () => {
         accounts.other = other
         accounts.anonymous = anonymous
         accounts.erc20contract = erc20contract
+        accounts.auth1 = auth1
+        accounts.auth2 = auth2
+        accounts.auth3 = auth3
+        accounts.fede1 = fede1
+        accounts.fede2 = fede2
+        accounts.fede3 = fede3
+        accounts.fede4 = fede4
+        accounts.fede5 = fede5
+        accounts.fede6 = fede6
     }
 
     // Handle the Trusty Multisignature Factory deploy for each test that needs an istance to run and fill the necessary accounts signers
@@ -61,13 +82,6 @@ describe("Trusty tests", async () => {
         const MusigFactory = await ethers.getContractFactory("TrustyFactory");
         const musigFactory = await MusigFactory.deploy({ value: 0 });
         Factory = musigFactory
-    }
-
-    const deployFactoryAdvanced = async () => {    
-        istantiateAccounts()
-        const MusigFactory = await ethers.getContractFactory("TrustyFactoryAdvanced");
-        const musigFactory = await MusigFactory.deploy({ value: 0 });
-        //Factory = musigFactory
     }
 
     // Handle the Trusty Multisignature single deploy for each test that needs an istance to run and fill the necessary accounts signers
@@ -80,13 +94,13 @@ describe("Trusty tests", async () => {
     const deployTrustySimple = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
         const Musig = await ethers.getContractFactory("TrustySimple");
         const musig = await Musig.deploy(owners, threshold, id, { value: 0 });
-        //Trusty = musig
+        Simple = musig
     }
 
-    const deployTrustyAdvanced = async (owners, threshold = 2,id="",whitelist=[], recovery) => {    
+    const deployTrustyAdvanced = async (owners, threshold = 2,id="",whitelist=[], recovery, authorizers) => {    
         const Musig = await ethers.getContractFactory("TrustyAdvanced");
-        const musig = await Musig.deploy(owners, threshold, id, whitelist, recovery, BLOCKLOCK, { value: 0 });
-        //Trusty = musig
+        const musig = await Musig.deploy(owners, threshold, id, whitelist, recovery, BLOCKLOCK, authorizers, { value: 0 });
+        Advanced = musig
     }
 
     // Handle the Trusty Multisignature Factory deploy for each test that needs an istance to run and fill the necessary accounts signers
@@ -1720,16 +1734,83 @@ describe("Trusty tests", async () => {
         });
     });
 
+    describe("Single and Advanced tests", async () => {
+        it("deploy simple test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await deployTrustySimple(owners,1,"Simple")
+        })
+
+        it("deploy advanced test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address,accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyAdvanced(owners,6,"Advanced",[accounts.owner.address], accounts.owner.address,authorizers)
+            const trustyAddress = Advanced.address;
+
+            const amount = ethers.utils.parseEther("0.1");
+
+            // Send ETH without `data`
+            await accounts.owner.sendTransaction({to: trustyAddress, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddress)).to.equal(amount);
+
+            // Submit transaction proposal
+            const txSend = await Advanced.connect(accounts.auth1).submitTransaction(accounts.owner.address, amount, Buffer.from("#testing!"), 0);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Advanced.connect(accounts.fede1).confirmTransaction(0);
+            await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Advanced.connect(accounts.fede2).confirmTransaction(0);
+            await txConfirm2.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm3 = await Advanced.connect(accounts.fede3).confirmTransaction(0);
+            await txConfirm3.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm4 = await Advanced.connect(accounts.fede4).confirmTransaction(0);
+            await txConfirm4.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm5 = await Advanced.connect(accounts.fede5).confirmTransaction(0);
+            await txConfirm5.wait();
+
+            // Confirm a tx from another account of owners
+            const txConfirm6 = await Advanced.connect(accounts.fede6).confirmTransaction(0);
+            await txConfirm6.wait();
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+
+            // Execute a tx
+            const txExe = await Advanced.connect(accounts.auth3).executeTransaction(0);
+            await txExe.wait();
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+
+            expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance));
+
+            // Get Trusty txs status
+            const txGet = await Trusty.getTransaction(0);
+
+            expect(txGet[3]).to.equal(true)
+        })
+    })
+
     describe("Deploys test", async () => {
         it("deploy all test", async () => {
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            const authorizers = [accounts.auth1.address, accounts.auth2.address, accounts.auth3.address]
+            
             await deployTrustySingle(owners,1, "Single", [...owners], accounts.owner.address);
             await deployFactory()
             await deployRecovery(owners,2, "RECOVERY", [...owners], accounts.owner.address);
             await deployTrustySimple(owners,1,"Simple")
-            await deployTrustyAdvanced(owners,1,"Advanced",owners,accounts.owner.address,0)
-            await deployFactoryAdvanced()
+            await deployTrustyAdvanced(owners,1,"Advanced",owners, accounts.owner.address,authorizers)
+            //await deployFactoryAdvanced()
         })
     })
 });

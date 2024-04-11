@@ -121,11 +121,13 @@ contract TrustyAdvanced {
         address[] memory _owners, 
         uint _numConfirmationsRequired, 
         string memory _id, 
-        address[] memory whitelist, 
+        address[] memory whitelist,
         address _recoveryTrusty,
-        uint _blocklock
+        uint _blocklock,
+        address[] memory _authorizers
     ) {
         require(_owners.length > 0, "owners required");
+        require(_authorizers.length > 0, "authorizers required");
 
         require(whitelist.length > 0, "a minimum whitelist is required or the funds will be locked forever");
         
@@ -149,7 +151,17 @@ contract TrustyAdvanced {
 
             owners.push(owner);
         }
+        
+        for (uint i = 0; i < _authorizers.length; i++) {
+            address authorizer = _authorizers[i];
+            require(authorizer != address(0), "invalid authorizer");
+            require(!isAuthorizer[authorizer], "authorizer not unique");
 
+            isAuthorizer[authorizer] = true;
+
+            authorizers.push(authorizer);
+        }
+        
         // Trusty Auto-Whitelist
         whitelistedToAddresses[address(this)] = true;
         whitelistedAddressesList.push(address(this));
@@ -225,7 +237,7 @@ contract TrustyAdvanced {
     * @param _data Optional data field or calldata to another contract
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
-    function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner isWhitelisted(_to) notBlacklisted(_to) notLocked {
+    function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyAuthorizer isWhitelisted(_to) notBlacklisted(_to) notLocked {
         require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
         this.checkData(_data);
 
@@ -281,7 +293,7 @@ contract TrustyAdvanced {
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notLocked {
+    function executeTransaction(uint _txIndex) public onlyAuthorizer txExists(_txIndex) notExecuted(_txIndex) notLocked {
         Transaction storage transaction = transactions[_txIndex];
 
         require(!blacklistedToAddresses[transaction.to], "Cannot execute, address/contract is blacklisted!");
