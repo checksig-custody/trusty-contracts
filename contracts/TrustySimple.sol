@@ -54,7 +54,7 @@ contract TrustySimple {
     }
 
     modifier onlyOwner() {
-        require(isOwner[msg.sender] || isOwner[tx.origin], "not owner");
+        require(isOwner[msg.sender], "not owner");
         _;
     }
 
@@ -69,7 +69,7 @@ contract TrustySimple {
     }
 
     modifier notConfirmed(uint _txIndex) {
-        require(!isConfirmed[_txIndex][tx.origin], "tx already confirmed");
+        require(!isConfirmed[_txIndex][msg.sender], "tx already confirmed");
         _;
     }
 
@@ -125,7 +125,7 @@ contract TrustySimple {
             })
         );
 
-        emit SubmitTransaction(tx.origin, txIndex, _to, _value, _data);
+        emit SubmitTransaction(msg.sender, txIndex, _to, _value, _data);
     }
 
     /**
@@ -136,9 +136,9 @@ contract TrustySimple {
     function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
         transaction.numConfirmations += 1;
-        isConfirmed[_txIndex][tx.origin] = true;
+        isConfirmed[_txIndex][msg.sender] = true;
 
-        emit ConfirmTransaction(tx.origin, _txIndex);
+        emit ConfirmTransaction(msg.sender, _txIndex);
     }
 
     /**
@@ -149,12 +149,12 @@ contract TrustySimple {
     function revokeConfirmation(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
         Transaction storage transaction = transactions[_txIndex];
 
-        require(isConfirmed[_txIndex][tx.origin], "tx not confirmed");
+        require(isConfirmed[_txIndex][msg.sender], "tx not confirmed");
 
         transaction.numConfirmations -= 1;
-        isConfirmed[_txIndex][tx.origin] = false;
+        isConfirmed[_txIndex][msg.sender] = false;
 
-        emit RevokeConfirmation(tx.origin, _txIndex);
+        emit RevokeConfirmation(msg.sender, _txIndex);
     }
 
     /**
@@ -179,7 +179,7 @@ contract TrustySimple {
 
         transaction.executed = true;
         
-        emit ExecuteTransaction(tx.origin, _txIndex);
+        emit ExecuteTransaction(msg.sender, _txIndex);
     }    
 
     /**
@@ -252,13 +252,13 @@ contract TrustySimple {
     * @notice Fallback function triggered when the contract is receiving Ether and msg.data is empty
     */
     receive() external payable {
-        emit Deposit(tx.origin, msg.value, address(this).balance);
+        emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 
     /**
     * @notice Fallback function triggered when the contract is receiving Ether and msg.data is not empty
     */
     fallback() external payable {
-        emit Deposit(tx.origin, msg.value, address(this).balance);
+        emit Deposit(msg.sender, msg.value, address(this).balance);
     }
 }
