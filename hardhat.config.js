@@ -109,6 +109,12 @@ if(useLedger) {
           ledgerAddress
         ]:[],
       },
+      amoy: {
+        url: `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
+        ledgerAccounts: useLedger?[
+          ledgerAddress
+        ]:[],
+      },
       mumbai: {
         url: `https://polygon-mumbai.infura.io/v3/${INFURA_API_KEY}`,
         ledgerAccounts: useLedger?[
@@ -178,6 +184,10 @@ if(useLedger) {
       },
       mumbai: {
         url: `https://polygon-mumbai.infura.io/v3/${INFURA_API_KEY}`,
+        //accounts: [PRIVATE_KEY],
+      },
+      amoy: {
+        url: `https://polygon-amoy.infura.io/v3/${INFURA_API_KEY}`,
         //accounts: [PRIVATE_KEY],
       },
       polygon: {

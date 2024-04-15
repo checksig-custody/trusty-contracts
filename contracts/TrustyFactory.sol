@@ -52,12 +52,12 @@ contract TrustyFactory is Ownable {
     * @param _owners Array of owners' addresses
     * @param _nTX Minimum number of confirmations required to execute a transaction
     */
-    function createContract(address[] memory _owners, uint _nTX, string memory _id, address[] memory _whitelist, address _recovery, uint _blocklock) payable public notWhitelisted {
+    function createContract(address[] memory _owners, uint _nTX, string memory _id) payable public notWhitelisted {
         if(_priceEnabled) {
             require(msg.value >= _price, "Ether sent is not enough");
         }
 
-        Trusty trusty = new Trusty(_owners, _nTX, _id, _whitelist, _recovery, _blocklock);
+        Trusty trusty = new Trusty(_owners, _nTX, _id/* , _whitelist, _recovery, _blocklock */);
         contracts.push(trusty);
 
         trustyID[totalTrusty] = _id;
@@ -133,7 +133,7 @@ contract TrustyFactory is Ownable {
     * @param _txIndex The transaction index of the contract's index specified
     * @custom:return bool Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTx(uint256 _contractIndex, uint _txIndex) public view returns(address, uint, bytes memory, bool, uint, uint, uint, uint) {
+    function getTx(uint256 _contractIndex, uint _txIndex) public view returns(address, uint, bytes memory, bool, uint, uint, uint) {
         return contracts[_contractIndex].getTransaction(_txIndex);
     }
     
@@ -144,8 +144,8 @@ contract TrustyFactory is Ownable {
     * @param _value The amount value of the proposed transaction
     * @param _data The data parameter can contains ordinary data or an encoded call to interact with another contract
     */
-    function trustySubmit(uint256 _contractIndex, address _to, uint256 _value, bytes memory _data, uint _timeLock) public notWhitelisted {
-        contracts[_contractIndex].submitTransaction(_to, _value, _data, _timeLock);
+    function trustySubmit(uint256 _contractIndex, address _to, uint256 _value, bytes memory _data) public notWhitelisted {
+        contracts[_contractIndex].submitTransaction(_to, _value, _data);
     }
     
     /**
@@ -173,33 +173,6 @@ contract TrustyFactory is Ownable {
     */
     function trustyRevoke(uint256 _contractIndex, uint _txIndex) public notWhitelisted {
         contracts[_contractIndex].revokeConfirmation(_txIndex);
-    }
-
-    /**
-    * @notice This method is used by the Trusty's owner to get the whitelisted addresses
-    * @param _contractIndex The Trusty contract index that will be called
-    * @return address[] Returns an array of whitelisted addresses
-    */
-    function getTrustyWhitelist(uint256 _contractIndex) public view returns(address[] memory) {
-        return contracts[_contractIndex].getWhitelist();
-    }
-
-    /**
-    * @notice This method is used by the Trusty's owner to get the blacklisted addresses
-    * @param _contractIndex The Trusty contract index that will be called
-    * @return address[] Returns an array of whitelisted addresses
-    */
-    function getTrustyBlacklist(uint256 _contractIndex) public view returns(address[] memory) {
-        return contracts[_contractIndex].getBlacklist();
-    }
-
-    /**
-    * @notice This method is used by the Trusty's owner to update the blacklisted addresses
-    * @param _contractIndex The Trusty contract index that will be called
-    * @param addresses An array of addresses to be blacklisted
-    */
-    function addToTrustyBlacklist(uint256 _contractIndex, address[] memory addresses) public notWhitelisted {
-        return contracts[_contractIndex].addAddressToBlacklist(addresses);
     }
 
     /**

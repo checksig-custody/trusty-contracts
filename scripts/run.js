@@ -47,6 +47,7 @@ const main = async () => {
   // Get the contract's code to be deployed from `contracts/TrustyFactory.sol`
   const ContractFactory = await hre.ethers.getContractFactory("TrustyFactory");
   const ContractTrusty = await hre.ethers.getContractFactory("Trusty");
+  const ContractAdvanced = await hre.ethers.getContractFactory("TrustyAdvanced");
   const ContractRecovery = await hre.ethers.getContractFactory("Recovery");
   const ContractERC20 = await hre.ethers.getContractFactory("ERC20");
 
@@ -102,30 +103,33 @@ const main = async () => {
   console.log(`[ERC20 address]: ${erc20Addr}`)
 
   // Create a Trusty multisignature
-  const create = await Contract.createContract([...owners], 2, "first", [anonymous.address,"0xeDaCEf763B85597A517061D276D61947610411D1"], recoveryAddr, BLOCKLOCK, {value:0}); //ethers.utils.parseEther("0.02")
+  const create = await Contract.createContract([...owners], 2, "first", {value:0}); //ethers.utils.parseEther("0.02")
   //const create = await Contract.createContract(owners, 2, "first", [anonymous.address], {value:0}); //ethers.utils.parseEther("0.02")
   
-  const Trusty = await ContractTrusty.deploy(owners, 2, "SingleTrusty", [anonymous.address], recoveryAddr, BLOCKLOCK, {value:0});
+  const Trusty = await ContractTrusty.deploy(owners, 2, "SingleTrusty", {value:0});
   await Trusty.deployed();
+
+  const TrustyAdvanced = await ContractAdvanced.deploy(owners, 2, "AdvancedTrusty", [anonymous.address, "0xeDaCEf763B85597A517061D276D61947610411D1"], recoveryAddr, BLOCKLOCK, owners, {value:0});
+  await TrustyAdvanced.deployed();
 
   // Get created contract address
   const addr = await Contract.contracts(0);
   console.log("[Trusty address]: ", addr);
 
   // Create a second Trusty
-  const create2 = await Contract.createContract([...owners], 2, "second", [anonymous.address, ...owners], recoveryAddr, BLOCKLOCK, {value:0});
+  const create2 = await Contract.createContract([...owners], 2, "second", {value:0});
 
   // Retrieve the contract's address from Factory calling the method `contracts()` and passing the index number
   const addr2 = await Contract.contracts(1);
   console.log("[Trusty2 address]: ", addr2);
 
   // Create a third Trusty
-  const create3 = await Contract.createContract([...owners], 2, "third", [...owners], recoveryAddr, BLOCKLOCK, {value:0}); 
+  const create3 = await Contract.createContract([...owners], 2, "third", {value:0}); 
   const addr3 = await Contract.contracts(2);
   console.log("[Trusty3 address]: ", addr3);
 
   // Create a Trusty whose owners are 1 Externally Owned Account (with private keys) plus the previous Trusties created (without private keys) resulting in a chained tree of Trusty multisignatures 
-  const createMix = await Contract.createContract([addr, addr2, addr3], 2, "mixed", [addr, addr2, addr3], recoveryAddr, BLOCKLOCK, {value:0}); 
+  const createMix = await Contract.createContract([addr, addr2, addr3], 2, "mixed", {value:0}); 
   const trustyMixAddr = await Contract.contracts(3);
   console.log("[TrustyMIX address]: ", trustyMixAddr);
 
@@ -133,6 +137,7 @@ const main = async () => {
   const amount = '123';
   const deposit1 = await Contract.depositContract(0, amount,{value: ethers.utils.parseEther("111")});
   const deposit3 = await Contract.depositContract(3, amount,{value: ethers.utils.parseEther(amount)});
+  const depositAdvanced = await owner.sendTransaction({to: TrustyAdvanced.address, value: amount});//await Contract.depositContract(3, amount,{value: ethers.utils.parseEther(amount)});
 
   // Simulate block height progress (mining)
   await mine(1).then(async () => {
@@ -162,13 +167,8 @@ const main = async () => {
   const imOwner = await Contract.imOwner(0);
   //console.log("[ImOwner?] ",imOwner);
 
-  //const setWhitelist = await Contract.connect(owner).addToTrustyWhitelist(0,[anonymous.address]);
-
-  const getWhitelist = await Contract.connect(owner).getTrustyWhitelist(0)
-  //console.log(`[whitelisted]: ${getWhitelist}`)
-
   // Propose to submit a tx from a Trusty
-  const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, "0xa9059cbb000000000000000000000000eDaCEf763B85597A517061D276D61947610411D10000000000000000000000000000000000000000000000000de0b6b3a7640000", 0);
+  const txSend = await Contract.connect(owner).trustySubmit(0, anonymous.address, 1, "0xa9059cbb000000000000000000000000eDaCEf763B85597A517061D276D61947610411D10000000000000000000000000000000000000000000000000de0b6b3a7640000");
   //const txSend = await Contract.connect(owner).trustySubmit(1, anonymous.address, 1, Buffer.from("This is a test for catching calldata..."), 0);
   //const txSend = await Contract.connect(owner).trustySubmit(1, anonymous.address, 1, 0x0, 0);
   await txSend.wait();
@@ -200,9 +200,6 @@ const main = async () => {
     //console.log("[get TX status updated]:", txGet2);    
   });
 
-  const absoluteTimelock = await Trusty.absolute_timelock();
-  console.log(`[Absolute Timelock]: ${absoluteTimelock}`);
-
   const totTrusty = await Contract.totalTrusty();
   for (let i = 0; i < totTrusty; i++) {
     const id = await Contract.trustyID(i)
@@ -211,7 +208,7 @@ const main = async () => {
 
   // DISASTER RECOVERY 
   //const recover = await Trusty.connect(recoveryAddr).recover(owner.address, Buffer.from("data"));
-  const recoveryWhitelist = await recovery.addAddressToRecoveryWhitelist([addr,addr2,addr3,trustyMixAddr]);
+  const recoveryWhitelist = await recovery.addAddressToRecoveryWhitelist([addr,addr2,addr3,trustyMixAddr,TrustyAdvanced.address]);
   await recoveryWhitelist.wait()
 
   const recoveryName = await recovery.id()
@@ -238,7 +235,7 @@ const main = async () => {
   
   //0xce746024
   //const recover = await recovery.submitTransaction(addr , 0, Buffer.from(""), 0);
-  const recover = await recovery.submitTransaction(addr , 0, "0xce746024"); //ETH native
+  const recover = await recovery.submitTransaction(TrustyAdvanced.address , 0, "0xce746024"); //ETH native
   //const recover = await recovery.submitTransaction(addr , 0, "0x7c0f1ee7", 0); //ERC20
   await recover.wait();
 
@@ -262,8 +259,10 @@ const main = async () => {
     //console.log("[recoExe TX hash]:", recoExe.hash);
   })
 
-  const addrBalance = await Contract.contractReadBalance(0);
-  console.log("[Trusty addr balance post recover]: ", addrBalance);
+  //const addrBalance = await Contract.contractReadBalance(0);
+  //console.log("[Trusty addr balance post recover]: ", addrBalance);
+  const addrBalance = await TrustyAdvanced.getBalance();
+  console.log("[TrustyAdvanced addr balance post recover]: ", addrBalance);
 
   const recoBalance = await await hre.ethers.provider.getBalance(recoveryAddr);
   console.log("[Recovery balance post recover]: ", recoBalance);
@@ -271,20 +270,20 @@ const main = async () => {
   const erc20bal = await erc20.connect(owner).balanceOf(owner.address)
   //console.log(`[Erc20bal]: ${erc20bal}`)
 
-  const erc20approve = await erc20.connect(owner).approve(addr, "100000000000000000000000000")
+  const erc20approve = await erc20.connect(owner).approve(TrustyAdvanced.address, "100000000000000000000000000")
   await erc20approve.wait()
 
-  const erc20transfer = await erc20.connect(owner).transfer(addr, "100000000000000000000000000")
+  const erc20transfer = await erc20.connect(owner).transfer(TrustyAdvanced.address, "100000000000000000000000000")
   await erc20transfer.wait()
 
-  const erc20Trustybal = await erc20.connect(owner).balanceOf(addr)
+  const erc20Trustybal = await erc20.connect(owner).balanceOf(TrustyAdvanced.address)
   //console.log(`[Erc20Trustybal-preRecover]: ${erc20Trustybal}`)
 
   //52b7d2dcc80cd2e4000000//52b7d2dcc80cd400000000//52b7d2cee7561f3c9c0000
   //0x8980f11f000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C900000000000000000000000000000000000000000052b7d2dcc80cd2e4000000
   //0x8980f11f000000000000000000000000326C977E6efc84E512bB9C30f76E30c160eD06FB00000000000000000000000000000000000000000052b7d2cee7562000000000
   //0x9e8c708e000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C9
-  const recoverErc20 = await recovery.submitTransaction(addr , 0, "0x9e8c708e000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C9"); //ERC20
+  const recoverErc20 = await recovery.submitTransaction(TrustyAdvanced.address , 0, "0x9e8c708e000000000000000000000000Dc64a140Aa3E981100a9becA4E685f962f0cF6C9"); //ERC20
   await recoverErc20.wait();
 
   const recoConfirmErc20 = await recovery.connect(other).confirmTransaction(1);
