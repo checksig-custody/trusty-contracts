@@ -145,10 +145,6 @@ contract TrustyAdvanced {
 
             isOwner[owner] = true;
 
-            // Owners Auto-whitelisting
-            //whitelistedToAddresses[owner] = true;
-            //whitelistedAddressesList.push(owner);
-
             owners.push(owner);
         }
         
@@ -316,6 +312,8 @@ contract TrustyAdvanced {
 
         transaction.executed = true;
 
+        transaction.timestamp = block.timestamp;
+
         unlock();
         
         emit ExecuteTransaction(msg.sender, _txIndex);
@@ -352,7 +350,7 @@ contract TrustyAdvanced {
     * @param _txIndex The index of the transaction that needs to be retrieved
     * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timeLock) {
+    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timestamp, uint timeLock) {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
@@ -362,6 +360,7 @@ contract TrustyAdvanced {
             transaction.executed,
             transaction.numConfirmations,
             transaction.blockHeight,
+            transaction.timestamp,
             transaction.timeLock
         );
     }
@@ -388,19 +387,6 @@ contract TrustyAdvanced {
     }
 
     /**
-    * @notice addAddressToRecoverWhitelist - This function adds the address of the sender to the whitelist
-    * @custom:param `address[]` An array of addresses to be whitelisted
-    * @custom:owner Can be called by owner
-    */
-    function addAddressToRecoveryWhitelist(address[] memory addresses) public onlyOwner {        
-        for (uint i = 0; i < addresses.length; i++) {
-            // Add the address which called the function to the whitelistedAddress array
-            whitelistedToAddresses[addresses[i]] = true;
-            whitelistedAddressesList.push(addresses[i]);
-        }        
-    }
-
-    /**
     * @notice This method is used by the Trusty's owner to get the blacklisted addresses
     * @custom:owner Can be called by owner
     */
@@ -413,7 +399,7 @@ contract TrustyAdvanced {
     * @custom:param `address[]` An array of addresses to be removed from blacklist
     * @custom:owner Can be called by owner
     */
-    function addAddressToBlacklist(address[] memory addresses) public onlyOwner {
+    function addAddressToBlacklist(address[] memory addresses) public onlyAuthorizer {
         for (uint i = 0; i < addresses.length; i++) {
             require(!blacklistedToAddresses[addresses[i]], "Duplicate address in blacklist");
             blacklistedToAddresses[addresses[i]] = true;

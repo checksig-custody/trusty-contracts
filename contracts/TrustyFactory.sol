@@ -133,7 +133,7 @@ contract TrustyFactory is Ownable {
     * @param _txIndex The transaction index of the contract's index specified
     * @custom:return bool Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTx(uint256 _contractIndex, uint _txIndex) public view returns(address, uint, bytes memory, bool, uint, uint, uint) {
+    function getTx(uint256 _contractIndex, uint _txIndex) public view returns(address, uint, bytes memory, bool, uint, uint, uint, uint) {
         return contracts[_contractIndex].getTransaction(_txIndex);
     }
     

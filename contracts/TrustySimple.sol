@@ -37,6 +37,7 @@ contract TrustySimple {
         bool executed;
         uint numConfirmations;     
         uint blockHeight;
+        uint timestamp;
     }
 
     // mapping from tx index => owner => bool
@@ -121,7 +122,8 @@ contract TrustySimple {
                 data: _data,
                 executed: false,
                 numConfirmations: 0,
-                blockHeight: block.number
+                blockHeight: block.number,
+                timestamp: block.timestamp
             })
         );
 
@@ -178,6 +180,8 @@ contract TrustySimple {
         require(success, "tx failed");
 
         transaction.executed = true;
+
+        transaction.timestamp = block.timestamp;
         
         emit ExecuteTransaction(msg.sender, _txIndex);
     }    
@@ -213,7 +217,7 @@ contract TrustySimple {
     * @param _txIndex The index of the transaction that needs to be retrieved
     * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight) {
+    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timestamp) {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
@@ -222,8 +226,8 @@ contract TrustySimple {
             transaction.data,
             transaction.executed,
             transaction.numConfirmations,
-            transaction.blockHeight
-            //transaction.timeLock
+            transaction.blockHeight,
+            transaction.timestamp
         );
     } 
 

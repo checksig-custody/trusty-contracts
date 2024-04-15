@@ -297,6 +297,8 @@ contract Trusty {
 
         transaction.executed = true;
 
+        transaction.timestamp = block.timestamp;
+
         unlock();
         
         emit ExecuteTransaction(tx.origin, _txIndex);
@@ -333,7 +335,7 @@ contract Trusty {
     * @param _txIndex The index of the transaction that needs to be retrieved
     * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timeLock) {
+    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timestamp, uint timeLock) {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
@@ -343,6 +345,7 @@ contract Trusty {
             transaction.executed,
             transaction.numConfirmations,
             transaction.blockHeight,
+            transaction.timestamp,
             transaction.timeLock
         );
     }
