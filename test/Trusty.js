@@ -774,6 +774,12 @@ describe("Trusty tests", async () => {
 
             const txSend = await Advanced.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, TIME_LOCK);
             await txSend.wait();
+
+            const txAuthorization = await Advanced.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorization.wait()
+
+            const txAuthorization2 = await Advanced.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorization2.wait()
             
             // Confirm a tx from an account of owners
             //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
@@ -932,6 +938,12 @@ describe("Trusty tests", async () => {
             //await txSend.wait();
             const txSend = await Advanced.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 0);
             await txSend.wait();
+
+            const txAuthorization = await Advanced.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorization.wait()
+
+            const txAuthorization2 = await Advanced.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorization2.wait()
 
             // Confirm a tx from an account of owners
             //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
@@ -1249,7 +1261,13 @@ describe("Trusty tests", async () => {
             //await txSend.wait();
             const txSend = await Advanced.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 0);
             await txSend.wait();
+            
+            const txAuthorization = await Advanced.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorization.wait()
 
+            const txAuthorization2 = await Advanced.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorization2.wait()
+            
             // Confirm a tx from an account of owners
             //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
             //await txConfirm.wait();
@@ -1263,7 +1281,7 @@ describe("Trusty tests", async () => {
             await txConfirm2.wait()
 
             // Execute a tx
-            await mine(ABSOLUTE_LOCK + 115).then(async () => {
+            await mine(ABSOLUTE_LOCK + 113).then(async () => {
                 //const txExe = await Factory.connect(accounts.owner).trustyExecute(0,0);
                 //await txExe.wait();
                 const txExe = await Advanced.connect(accounts.auth1).executeTransaction(0)
@@ -1653,6 +1671,12 @@ describe("Trusty tests", async () => {
             const txSend = await Advanced.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 0);
             await txSend.wait();
 
+            const txAuthorization = await Advanced.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorization.wait()
+
+            const txAuthorization2 = await Advanced.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorization2.wait()
+
             // Confirm a tx from an account of owners
             //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
             //await txConfirm.wait();
@@ -1972,7 +1996,7 @@ describe("Trusty tests", async () => {
         });
     });
 
-    describe("Single and Advanced tests", async () => {
+    describe("Simple and Advanced tests", async () => {
         it("deploy simple test", async () => {
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -1995,6 +2019,12 @@ describe("Trusty tests", async () => {
             // Submit transaction proposal
             const txSend = await Advanced.connect(accounts.auth1).submitTransaction(accounts.owner.address, amount, Buffer.from("#testing!"), 0);
             await txSend.wait();
+
+            const txAuthorization = await Advanced.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorization.wait()
+
+            const txAuthorization2 = await Advanced.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorization2.wait()
 
             // Confirm a tx from an account of owners
             const txConfirm = await Advanced.connect(accounts.fede1).confirmTransaction(0);

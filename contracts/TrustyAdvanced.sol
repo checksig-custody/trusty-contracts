@@ -24,6 +24,7 @@ contract TrustyAdvanced {
     event ConfirmTransaction(address indexed owner, uint indexed txIndex);
     event RevokeConfirmation(address indexed owner, uint indexed txIndex);
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
+    event AuthorizeTransaction(address indexed authorizer, uint indexed txIndex);
 
     error TimeLock(string err,int blockLeft);
 
@@ -33,13 +34,15 @@ contract TrustyAdvanced {
     address[] public authorizers;
     mapping(address => bool) public isAuthorizer;
     uint public numConfirmationsRequired;
+    uint public numAuthorizationsRequired;
 
     struct Transaction {
         address to;
         uint value;
         bytes data;
         bool executed;
-        uint numConfirmations;     
+        uint numConfirmations;
+        uint numAuthorizations;
         uint blockHeight;
         uint timestamp;
         uint timeLock;   
@@ -47,6 +50,7 @@ contract TrustyAdvanced {
 
     // mapping from tx index => owner => bool
     mapping(uint => mapping(address => bool)) public isConfirmed;
+    mapping(uint => mapping(address => bool)) public isAuthorized;
 
     Transaction[] public transactions;
 
@@ -116,6 +120,11 @@ contract TrustyAdvanced {
         _;
     }
 
+    modifier notAuthorized(uint _txIndex) {
+        require(!isAuthorized[_txIndex][msg.sender], "tx already authorized");
+        _;
+    }
+
     // Constructor
     constructor(
         address[] memory _owners, 
@@ -165,6 +174,7 @@ contract TrustyAdvanced {
         addAddressToWhitelist(whitelist);
 
         numConfirmationsRequired = _numConfirmationsRequired;
+        numAuthorizationsRequired = 2;
 
         id = _id;
 
@@ -246,6 +256,7 @@ contract TrustyAdvanced {
                 data: _data,
                 executed: false,
                 numConfirmations: 0,
+                numAuthorizations: 0,
                 blockHeight: block.number,
                 timestamp: block.timestamp,
                 timeLock: _timeLock
@@ -266,6 +277,17 @@ contract TrustyAdvanced {
         isConfirmed[_txIndex][msg.sender] = true;
 
         emit ConfirmTransaction(msg.sender, _txIndex);
+    }
+
+    /**
+     * @notice Method used to add an authorization to a transaction
+     */
+    function authorizeTransaction(uint _txIndex) public onlyAuthorizer txExists(_txIndex) notExecuted(_txIndex) notAuthorized(_txIndex) {
+        Transaction storage transaction = transactions[_txIndex];
+        transaction.numAuthorizations += 1;
+        isAuthorized[_txIndex][msg.sender] = true;
+
+        emit AuthorizeTransaction(msg.sender, _txIndex);
     }
 
     /**
@@ -299,6 +321,8 @@ contract TrustyAdvanced {
             transaction.numConfirmations >= numConfirmationsRequired,
             "cannot execute tx due to number of confirmation required"
         );
+
+        require(transaction.numAuthorizations >= numAuthorizationsRequired, "cannot execute tx due to number of authorization required");
 
         if (transaction.blockHeight + transaction.timeLock > block.number) {
             int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
@@ -350,7 +374,7 @@ contract TrustyAdvanced {
     * @param _txIndex The index of the transaction that needs to be retrieved
     * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timestamp, uint timeLock) {
+    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint numAuthorizations, uint blockHeight, uint timestamp, uint timeLock) {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
@@ -359,6 +383,7 @@ contract TrustyAdvanced {
             transaction.data,
             transaction.executed,
             transaction.numConfirmations,
+            transaction.numAuthorizations,
             transaction.blockHeight,
             transaction.timestamp,
             transaction.timeLock
