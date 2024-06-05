@@ -272,6 +272,7 @@ contract TrustyAdvanced {
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
     function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
+        require(!isAuthorizer[msg.sender] ,"Authorizer can not confirm");
         Transaction storage transaction = transactions[_txIndex];
         transaction.numConfirmations += 1;
         isConfirmed[_txIndex][msg.sender] = true;
@@ -399,16 +400,49 @@ contract TrustyAdvanced {
     }
 
     /**
-    * @notice addAddressToWhitelist - This function adds the address of the sender to the whitelist
+    * @notice addAddressToWhitelist - This function adds addresses to the whitelist
     * @custom:param `address[]` An array of addresses to be whitelisted
-    * @custom:owner Can be called by owner
+    * @custom:private Can be called by the contract
     */
     function addAddressToWhitelist(address[] memory addresses) private {
         for (uint i = 0; i < addresses.length; i++) {
-            require(!whitelistedToAddresses[addresses[i]], "Each address must be unique to be in whitelist");
+            require(!whitelistedToAddresses[addresses[i]], "Each address must be unique and not in whitelist");
             whitelistedToAddresses[addresses[i]] = true;
             whitelistedAddressesList.push(addresses[i]);
         }        
+    }
+
+    function removeAddressFromWhitelist(address[] memory addresses) private {
+        for (uint i = 0; i < addresses.length; i++) {
+            require(whitelistedToAddresses[addresses[i]], "Each address must be unique and in whitelist");
+            whitelistedToAddresses[addresses[i]] = false;
+            for (uint j = 0; j < whitelistedAddressesList.length; j++) {
+                if (whitelistedAddressesList[j] == addresses[i]) {
+                    for (uint256 k = j; k < whitelistedAddressesList.length - 1; k++) {
+                        whitelistedAddressesList[k] = whitelistedAddressesList[k + 1];
+                    }
+                    whitelistedAddressesList.pop();
+                }
+            }
+        }
+    }
+
+    /**
+    * @notice addToWhitelist - This function adds an address to the whitelist
+    * @custom:param `address[]` An array of addresses to be whitelisted
+    * @custom:authorizer Can be called by an Authorizer
+    */
+    function addToWhitelist(address[] memory _addresses) public onlyAuthorizer {
+        addAddressToWhitelist(_addresses);
+    }
+
+    /**
+    * @notice removeFromWhitelist - This function removes address from the whitelist
+    * @custom:param `address[]` An array of addresses to be removed from whitelist
+    * @custom:authorizer Can be called by an Authorizer
+    */
+    function removeFromWhitelist(address[] memory _addresses) public onlyAuthorizer {
+        removeAddressFromWhitelist(_addresses);
     }
 
     /**
@@ -421,8 +455,8 @@ contract TrustyAdvanced {
 
     /**
     * @notice addAddressToBlacklist - This function adds the address to the blacklist
-    * @custom:param `address[]` An array of addresses to be removed from blacklist
-    * @custom:owner Can be called by owner
+    * @custom:param `address[]` An array of addresses to be added to the blacklist
+    * @custom:owner Can be called by an Authorizer
     */
     function addAddressToBlacklist(address[] memory addresses) public onlyAuthorizer {
         for (uint i = 0; i < addresses.length; i++) {
@@ -430,6 +464,26 @@ contract TrustyAdvanced {
             blacklistedToAddresses[addresses[i]] = true;
             blacklistedAddressesList.push(addresses[i]);
         }        
+    }
+
+    /**
+    * @notice removeAddressFromBlacklist - This function remove the address from the blacklist
+    * @custom:param `address[]` An array of addresses to be removed from blacklist
+    * @custom:owner Can be called by an Authorizer
+    */
+    function removeAddressFromBlacklist(address[] memory addresses) public onlyAuthorizer {
+        for (uint i = 0; i < addresses.length; i++) {
+            require(blacklistedToAddresses[addresses[i]], "Address not in blacklist");
+            blacklistedToAddresses[addresses[i]] = false;
+            for (uint j = 0; j < blacklistedAddressesList.length; j++) {
+                if (blacklistedAddressesList[j] == addresses[i]) {
+                    for (uint256 k = j; k < blacklistedAddressesList.length - 1; k++) {
+                        blacklistedAddressesList[k] = blacklistedAddressesList[k + 1];
+                    }
+                    blacklistedAddressesList.pop();
+                }
+            }
+        }
     }
 
     /**

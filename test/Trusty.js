@@ -881,7 +881,7 @@ describe("Trusty tests", async () => {
     })
 
     describe("Type Advanced Whitelist tests", async () => {
-        it("add whitelisted address test", async () => {
+        it("add whitelisted address on deploy test", async () => {
             await deployFactory()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             
@@ -902,6 +902,128 @@ describe("Trusty tests", async () => {
             for(let i = 0; i < getTrustyWhitelist.length; i++) {
                 //console.log(getTrustyWhitelist[i],whitelistToCheck[i])
                 expect(getTrustyWhitelist[i]).to.be.equal(whitelistToCheck[i])
+            }
+            
+        })
+
+        it("add addresses to whitelist test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            // WHITELIST
+            const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
+
+            //const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
+            //const trustyAddr = await Factory.contracts(0);
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyAdvanced(owners,2,"Advanced", [accounts.anonymous.address], accounts.owner.address, authorizers)
+            const trustyAddr = await Advanced.address;
+
+            //const getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
+            
+
+            const whitelistToCheck = [trustyAddr, accounts.anonymous.address] //trustyAddr,
+
+            const toAdd = accounts.other.address
+
+            await Advanced.connect(accounts.auth3).addToWhitelist([toAdd])
+
+            const getTrustyWhitelist = await Advanced.getWhitelist()
+
+            whitelistToCheck.push(toAdd)
+
+            for(let i = 0; i < getTrustyWhitelist.length; i++) {
+                //console.log(getTrustyWhitelist[i],whitelistToCheck[i])
+                expect(getTrustyWhitelist[i]).to.be.equal(whitelistToCheck[i])
+            }
+            
+        })
+
+        it("remove addresses from whitelist test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            // WHITELIST
+            const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
+
+            //const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
+            //const trustyAddr = await Factory.contracts(0);
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyAdvanced(owners,2,"Advanced", [accounts.anonymous.address], accounts.owner.address, authorizers)
+            const trustyAddr = await Advanced.address;
+
+            //const getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
+            
+
+            const whitelistToCheck = [trustyAddr, accounts.anonymous.address,
+                //"0x000000000000000000000000000000000000000A",
+                //"0x000000000000000000000000000000000000000b",
+                "0x000000000000000000000000000000000000000C",
+                "0x000000000000000000000000000000000000000d",
+                //"0x000000000000000000000000000000000000000E",
+                "0x000000000000000000000000000000000000000F"
+            ] //trustyAddr,
+
+            const toRemove = accounts.other.address
+
+            await Advanced.connect(accounts.auth3).addToWhitelist([toRemove,
+            "0x000000000000000000000000000000000000000A",
+            "0x000000000000000000000000000000000000000b",
+            "0x000000000000000000000000000000000000000C",
+            "0x000000000000000000000000000000000000000d",
+            "0x000000000000000000000000000000000000000E",
+            "0x000000000000000000000000000000000000000F"])
+            //whitelistToCheck.push(toRemove)
+            await Advanced.connect(accounts.auth3).removeFromWhitelist([toRemove,"0x000000000000000000000000000000000000000E","0x000000000000000000000000000000000000000b","0x000000000000000000000000000000000000000A"])
+
+            const getTrustyWhitelist = await Advanced.getWhitelist()
+            
+            //console.log(getTrustyWhitelist)            
+
+            for(let i = 0; i < getTrustyWhitelist.length; i++) {
+                //console.log(getTrustyWhitelist[i],whitelistToCheck[i])
+                expect(getTrustyWhitelist[i]).to.be.equal(whitelistToCheck[i])
+            }            
+        })
+
+        it("remove addresses from blacklist test", async () => {
+            await deployFactory()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            // WHITELIST
+            const whitelist = await Factory.connect(accounts.owner).addToFactoryWhitelist([...owners]);
+
+            //const create = await Factory.createContract(owners, 2, "", [accounts.anonymous.address], accounts.owner.address, BLOCKLOCK, {value: trustyPrice});
+            //const trustyAddr = await Factory.contracts(0);
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyAdvanced(owners,2,"Advanced", [accounts.anonymous.address], accounts.owner.address, authorizers)
+            const trustyAddr = await Advanced.address;
+
+            //const getTrustyWhitelist = await Factory.getTrustyWhitelist(0);
+            
+
+            const blacklistToCheck = [] //trustyAddr,
+
+            const toAdd = accounts.other.address
+
+            await Advanced.connect(accounts.auth3).addAddressToBlacklist([toAdd])
+
+            let isBlacklisted = await Advanced.connect(accounts.auth3).blacklistedToAddresses(toAdd)
+            //console.log(">>>>",isBlacklisted)
+
+            await Advanced.connect(accounts.auth3).removeAddressFromBlacklist([toAdd])
+
+            isBlacklisted = await Advanced.connect(accounts.auth3).blacklistedToAddresses(toAdd)
+            //console.log(">>>>",isBlacklisted)
+
+            const getTrustyBlacklist = await Advanced.getBlacklist()
+            //console.log(getTrustyBlacklist)
+
+            blacklistToCheck.push(toAdd)
+
+            for(let i = 0; i < getTrustyBlacklist.length; i++) {
+                //console.log(getTrustyWhitelist[i],whitelistToCheck[i])
+                expect(getTrustyBlacklist[i]).to.be.equal(blacklistToCheck[i])
             }
             
         })
@@ -1912,6 +2034,71 @@ describe("Trusty tests", async () => {
             })
         })
     })
+
+    describe("Type Advanced Authorizer tests", async () => {
+        it("should revert a confirmation from authorizer", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address,accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyAdvanced(owners,3,"Advanced",[accounts.owner.address], accounts.owner.address,authorizers)
+            const trustyAddress = Advanced.address;
+
+            const amount = ethers.utils.parseEther("0.1");
+
+            // Send ETH without `data`
+            await accounts.owner.sendTransaction({to: trustyAddress, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddress)).to.equal(amount);
+
+            // Submit transaction proposal
+            const txSend = await Advanced.connect(accounts.auth1).submitTransaction(accounts.owner.address, amount, Buffer.from("#testing!"), 0);
+            await txSend.wait();
+
+            const txAuthorization = await Advanced.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorization.wait()
+
+            const txAuthorization2 = await Advanced.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorization2.wait()
+
+            // Confirm a tx from an account of owners
+            await expect(Advanced.connect(accounts.auth1).confirmTransaction(0)).to.be.revertedWith("Authorizer can not confirm");
+            //await txConfirm.wait();
+
+            // Confirm a tx from another account of owners
+            //const txConfirm2 = await Advanced.connect(accounts.fede2).confirmTransaction(0);
+            //await txConfirm2.wait();
+
+            // Confirm a tx from another account of owners
+            //const txConfirm3 = await Advanced.connect(accounts.fede3).confirmTransaction(0);
+            //await txConfirm3.wait();
+
+            // Confirm a tx from another account of owners
+            //const txConfirm4 = await Advanced.connect(accounts.fede4).confirmTransaction(0);
+            //await txConfirm4.wait();
+
+            // Confirm a tx from another account of owners
+            //const txConfirm5 = await Advanced.connect(accounts.fede5).confirmTransaction(0);
+            //await txConfirm5.wait();
+
+            // Confirm a tx from another account of owners
+            //const txConfirm6 = await Advanced.connect(accounts.fede6).confirmTransaction(0);
+            //await txConfirm6.wait();
+
+            //const preBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+
+            // Execute a tx
+            //const txExe = await Advanced.connect(accounts.auth3).executeTransaction(0);
+            //await txExe.wait();
+
+            //const postBalance = await hre.ethers.provider.getBalance(accounts.owner.address);
+
+            //expect(BigInt(amount) + BigInt(preBalance)).to.equal(BigInt(postBalance));
+
+            // Get Trusty txs status
+            //const txGet = await Advanced.getTransaction(0);
+
+            //expect(txGet[3]).to.equal(true)
+        })
+    })
     
     // Tests without Factory intermediation
     describe("Deploy single Trusty without Factory interaction tests", async () => {
@@ -2064,7 +2251,7 @@ describe("Trusty tests", async () => {
             const txGet = await Advanced.getTransaction(0);
 
             expect(txGet[3]).to.equal(true)
-        })
+        })        
     })
 
     describe("Deploys test", async () => {
