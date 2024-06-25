@@ -31,6 +31,8 @@ let Recovery = null;
 let Erc20 = null;
 let Single = null;
 let Advanced = null;
+let Cold = null;
+let Frozen = null;
 
 const ethDecimals = 10**18;
 const trustyPrice = ethers.utils.parseEther("0");
@@ -55,7 +57,7 @@ const BLOCKLOCK = 28800;
 describe("Trusty tests", async () => {
     // Create various accounts signers for testing purpose
     const istantiateAccounts = async () => {
-        const [owner, otherAccount, otherOwner, otherOwner1, otherOwner2, randomAccount, other, anonymous, erc20contract, auth1, auth2, auth3, fede1, fede2, fede3, fede4, fede5, fede6] = await ethers.getSigners();
+        const [owner, otherAccount, otherOwner, otherOwner1, otherOwner2, randomAccount, other, anonymous, erc20contract, auth1, auth2, auth3, fede1, fede2, fede3, fede4, fede5, fede6, recovery] = await ethers.getSigners();
         accounts.owner = owner
         accounts.otherAccount = otherAccount
         accounts.otherOwner = otherOwner
@@ -74,6 +76,7 @@ describe("Trusty tests", async () => {
         accounts.fede4 = fede4
         accounts.fede5 = fede5
         accounts.fede6 = fede6
+        accounts.recovery = recovery
     }
 
     // Handle the Trusty Multisignature Factory deploy for each test that needs an istance to run and fill the necessary accounts signers
@@ -115,6 +118,18 @@ describe("Trusty tests", async () => {
         const Erc20Contract = await ethers.getContractFactory("ERC20");
         const erc20 = await Erc20Contract.deploy();
         Erc20 = erc20
+    }
+
+    const deployTrustyCold = async (owners, threshold = 2,id="",recovery) => {    
+        const MusigCold = await ethers.getContractFactory("TrustyCold");
+        const musig = await MusigCold.deploy(owners, threshold, id, recovery, { value: 0 });
+        Cold = musig
+    }
+
+    const deployTrustyFrozen = async (owners, threshold = 2,id="", recovery, authorizers) => {    
+        const MusigFrozen = await ethers.getContractFactory("TrustyFrozen");
+        const musig = await MusigFrozen.deploy(owners, threshold, id, recovery, authorizers, { value: 0 });
+        Frozen = musig
     }
 
     // Tests with Factory intermediation
@@ -1602,8 +1617,8 @@ describe("Trusty tests", async () => {
             expect(txGet[3]).to.equal(false)
 
             // Executes RECOVERY
-            const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
-            await recoverWhitelist.wait();
+            //const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+            //await recoverWhitelist.wait();
 
             //0xce746024 //0x7c0f1ee7
             const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
@@ -1699,8 +1714,8 @@ describe("Trusty tests", async () => {
             expect(txGet[3]).to.equal(false)
 
             // Executes RECOVERY
-            const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
-            await recoverWhitelist.wait();
+            //const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+            //await recoverWhitelist.wait();
 
             // ETH Recovery //0xce746024 //0x7c0f1ee7
             const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
@@ -1750,7 +1765,7 @@ describe("Trusty tests", async () => {
             expect(BigInt(erc20Recoverybal)).to.equal(erc20amount);
         })
 
-        it("execute transaction after a POR from recovery after absolute timelock reset test", async () => {
+        it("execute transaction after a renew from recovery and after absolute timelock reset test", async () => {
             const ABSOLUTE_LOCK = 28800;
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
@@ -1830,8 +1845,8 @@ describe("Trusty tests", async () => {
             expect(txGet[3]).to.equal(false)
 
             // Executes RECOVERY POR
-            const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
-            await recoverWhitelist.wait();
+            //const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+            //await recoverWhitelist.wait();
 
             
             // ETH POR //0x5c470ecb //0xa69df4b5
@@ -1920,8 +1935,8 @@ describe("Trusty tests", async () => {
                 expect(txGet[3]).to.equal(false)
 
                 // Executes RECOVERY
-                const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
-                await recoverWhitelist.wait();
+                //const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+                //await recoverWhitelist.wait();
 
                 //0xce746024 //0x7c0f1ee7
                 const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
@@ -2008,8 +2023,8 @@ describe("Trusty tests", async () => {
                 expect(txGet[3]).to.equal(false)
 
                 // Executes RECOVERY
-                const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
-                await recoverWhitelist.wait();
+                //const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+                //await recoverWhitelist.wait();
 
                 //0xce746024 //0x7c0f1ee7
                 const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
@@ -2097,6 +2112,735 @@ describe("Trusty tests", async () => {
             //const txGet = await Advanced.getTransaction(0);
 
             //expect(txGet[3]).to.equal(true)
+        })
+    })
+
+    /**
+     * CKSG
+     */
+    describe("Type Cold Recovery tests", async () => {
+        it("execute an eth recovery test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            await deployRecovery(owners,2, "RECOVERY");
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyCold(authorizers,2,"Cold", Recovery.address)
+            const trustyAddr = await Cold.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Cold.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 1000);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Cold.connect(accounts.auth2).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Cold.connect(accounts.auth3).confirmTransaction(0)
+            await txConfirm2.wait()        
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Cold.getTransaction(0);
+
+            expect(txGet[3]).to.equal(false)
+
+            // Executes RECOVERY
+
+            //0xce746024 //0x7c0f1ee7
+            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
+            await recover.wait()
+
+            const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
+            await confirm.wait()
+
+            const confirm2 = await Recovery.connect(accounts.other).confirmTransaction(0);
+            await confirm2.wait()
+
+            const executeRecover = await Recovery.connect(accounts.other).executeTransaction(0);
+            await executeRecover.wait();
+
+            const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
+            const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
+
+            expect(BigInt(trustyBal)).to.equal(BigInt(0));
+            expect(BigInt(recoveryBal)).to.equal(amount);
+        })
+
+        it("execute an erc20 recovery after absolute timelock expiring test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            
+            await deployRecovery(owners,2, "RECOVERY", [...owners]);
+            await deployErc20()
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyCold(authorizers,2,"Cold", Recovery.address)
+            const trustyAddr = await Cold.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+            
+            const erc20amount = ethers.utils.parseEther("100000000")
+
+            const erc20approve = await Erc20.connect(accounts.owner).approve(trustyAddr, erc20amount)
+            await erc20approve.wait()
+
+            const erc20transfer = await Erc20.connect(accounts.owner).transfer(trustyAddr, erc20amount)
+            await erc20transfer.wait()
+
+            //const erc20Trustybal = await Erc20.connect(accounts.owner).balanceOf(trustyAddr)
+            //console.log(`[Erc20Trustybal-preRecover]: ${erc20Trustybal}`)
+            
+            //const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            //await txDeposit.wait();
+            //expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            //const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0);
+            //await txSend.wait();
+            const txSend = await Cold.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 0);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            //await txConfirm.wait();
+            const txConfirm = await Cold.connect(accounts.auth2).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            //const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            //await txConfirm2.wait();
+            const txConfirm2 = await Cold.connect(accounts.auth3).confirmTransaction(0)
+            await txConfirm2.wait()
+            
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            //const txGet = await Factory.getTx(0,0);
+            const txGet = await Cold.getTransaction(0);
+
+            expect(txGet[3]).to.equal(false)
+
+            // Executes RECOVERY
+            //const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+            //await recoverWhitelist.wait();
+
+            // ETH Recovery //0xce746024 //0x7c0f1ee7
+            const recover = await Recovery.submitTransaction(trustyAddr, 0, "0xce746024");
+            await recover.wait()
+
+            const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
+            await confirm.wait()
+
+            const confirm2 = await Recovery.connect(accounts.other).confirmTransaction(0);
+            await confirm2.wait()
+
+            const executeRecover = await Recovery.connect(accounts.other).executeTransaction(0);
+            await executeRecover.wait();
+
+            const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
+            const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
+
+            expect(BigInt(trustyBal)).to.equal(BigInt(0));
+            expect(BigInt(recoveryBal)).to.equal(amount);
+
+            //console.log(hre.ethers.utils.hexlify(erc20amount)) //52b7d2dcc80cd2e4000000
+            //console.log(Erc20.address.slice(2,Erc20.address.length))
+
+            // ERC20 Recovery
+            //const erc20recover = await Recovery.submitTransaction(trustyAddr, 0, `0x8980f11f000000000000000000000000${Erc20.address.slice(2,Erc20.address.length)}000000000000000000000000000000000000000000${hre.ethers.utils.hexlify(erc20amount).slice(2)}`, 0);
+            const erc20recover = await Recovery.submitTransaction(trustyAddr, 0, `0x9e8c708e000000000000000000000000${Erc20.address.slice(2,Erc20.address.length)}`);
+            await erc20recover.wait()
+
+            const erc20confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(1);
+            await erc20confirm.wait()
+
+            const erc20confirm2 = await Recovery.connect(accounts.other).confirmTransaction(1);
+            await erc20confirm2.wait()
+
+            const erc20executeRecover = await Recovery.connect(accounts.other).executeTransaction(1);
+            await erc20executeRecover.wait();
+            
+            const erc20Trustybal = await Erc20.connect(accounts.owner).balanceOf(trustyAddr)
+            //console.log(`[Erc20Trustybal-postRecover]: ${erc20Trustybal}`)
+
+            const erc20Recoverybal = await Erc20.connect(accounts.owner).balanceOf(Recovery.address)
+            //console.log(`[Erc20Recoverybal-postRecover]: ${erc20Recoverybal}`)
+
+            expect(BigInt(erc20Trustybal)).to.equal(BigInt(0));
+            expect(BigInt(erc20Recoverybal)).to.equal(erc20amount);
+        })
+
+        it("should revert a recover from not recovery address test", async () => {
+            const ABSOLUTE_LOCK = 28800;
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            await deployRecovery(owners,2, "RECOVERY", [...owners]);
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployTrustyCold(authorizers,2,"Cold", Recovery.address)
+            const trustyAddr = await Cold.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+            
+            //const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            //await txDeposit.wait();
+            //expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            //const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0);
+            //await txSend.wait();
+            const txSend = await Cold.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 0);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            //await txConfirm.wait();
+            const txConfirm = await Cold.connect(accounts.auth2).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            //const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            //await txConfirm2.wait();
+            const txConfirm2 = await Cold.connect(accounts.auth3).confirmTransaction(0)
+            await txConfirm2.wait()
+
+            // Execute a tx after Absolute TimeLock
+            await mine(ABSOLUTE_LOCK + 120).then(async () => {
+                //const txExe = 
+                //await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.reverted;
+                //await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.revertedWith("Trusty is locked!")
+                //await txExe.wait();                       
+
+                const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+                expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+                // Get Trusty txs status
+                //const txGet = await Factory.getTx(0,0);
+                const txGet = await Cold.getTransaction(0);
+
+                expect(txGet[3]).to.equal(false)
+
+                // Executes RECOVERY
+
+                //0xce746024 //0x7c0f1ee7
+                await expect(Recovery.connect(accounts.anonymous).submitTransaction(trustyAddr, 0, "0xce746024")).to.be.reverted;
+                
+
+                const recover = await Recovery.connect(accounts.owner).submitTransaction(trustyAddr, 0, "0xce746024");
+                await recover.wait()
+
+                const confirm = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
+                await confirm.wait()
+
+                const confirm2 = await Recovery.connect(accounts.other).confirmTransaction(0);
+                await confirm2.wait()
+
+                //const executeRecover = 
+                //await Recovery.connect(accounts.other).executeTransaction(0)
+
+                const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
+                const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
+
+                expect(BigInt(trustyBal)).to.equal(amount);
+                expect(BigInt(recoveryBal)).to.equal(BigInt(0));
+            })
+        })
+    })
+
+    describe("Type Frozen Recovery tests", async () => {
+        it("execute an eth recovery test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployRecovery(authorizers,2, "RECOVERY");
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            await deployTrustyFrozen([...authorizers,...owners],3,"Frozen", Recovery.address,authorizers)
+            const trustyAddr = await Frozen.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Frozen.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 1000);
+            await txSend.wait();
+
+            // Authorize a tx from an account of owners
+            const txAuthorize = await Frozen.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorize.wait()
+
+            // Authorize a tx from another account of owners
+            const txAuthorize2 = await Frozen.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorize2.wait() 
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Frozen.connect(accounts.fede1).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Frozen.connect(accounts.fede2).confirmTransaction(0)
+            await txConfirm2.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm3 = await Frozen.connect(accounts.fede3).confirmTransaction(0)
+            await txConfirm3.wait()
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Frozen.getTransaction(0);
+
+            expect(txGet[3]).to.equal(false)
+
+            // Executes RECOVERY
+
+            //0xce746024 //0x7c0f1ee7
+            const recover = await Recovery.connect(accounts.auth1).submitTransaction(trustyAddr, 0, "0xce746024");
+            await recover.wait()
+
+            const confirm = await Recovery.connect(accounts.auth2).confirmTransaction(0);
+            await confirm.wait()
+
+            const confirm2 = await Recovery.connect(accounts.auth3).confirmTransaction(0);
+            await confirm2.wait()
+
+            const executeRecover = await Recovery.connect(accounts.auth1).executeTransaction(0);
+            await executeRecover.wait();
+
+            const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
+            const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
+
+            expect(BigInt(trustyBal)).to.equal(BigInt(0));
+            expect(BigInt(recoveryBal)).to.equal(amount);
+        })
+
+        it("execute an erc20 recovery test", async () => {
+            await istantiateAccounts()
+            const owners = [accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployRecovery(authorizers,2, "RECOVERY");
+            await deployErc20()
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            
+            await deployTrustyFrozen([...authorizers,...owners],3,"Frozen", Recovery.address,authorizers)
+            const trustyAddr = await Frozen.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+            
+            const erc20amount = ethers.utils.parseEther("100000000")
+
+            const erc20approve = await Erc20.connect(accounts.owner).approve(trustyAddr, erc20amount)
+            await erc20approve.wait()
+
+            const erc20transfer = await Erc20.connect(accounts.owner).transfer(trustyAddr, erc20amount)
+            await erc20transfer.wait()
+
+            //const erc20Trustybal = await Erc20.connect(accounts.owner).balanceOf(trustyAddr)
+            //console.log(`[Erc20Trustybal-preRecover]: ${erc20Trustybal}`)
+            
+            //const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            //await txDeposit.wait();
+            //expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            //const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0);
+            //await txSend.wait();
+            const txSend = await Frozen.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 0);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            //await txConfirm.wait();
+            const txConfirm = await Frozen.connect(accounts.auth2).authorizeTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            //const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            //await txConfirm2.wait();
+            const txConfirm2 = await Frozen.connect(accounts.auth3).authorizeTransaction(0)
+            await txConfirm2.wait()
+            
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            //const txGet = await Factory.getTx(0,0);
+            const txGet = await Frozen.getTransaction(0);
+
+            expect(txGet[3]).to.equal(false)
+
+            // Executes RECOVERY
+            //const recoverWhitelist = await Recovery.addAddressToRecoveryWhitelist([trustyAddr]);
+            //await recoverWhitelist.wait();
+
+            // ETH Recovery //0xce746024 //0x7c0f1ee7
+            const recover = await Recovery.connect(accounts.auth1).submitTransaction(trustyAddr, 0, "0xce746024");
+            await recover.wait()
+
+            const confirm = await Recovery.connect(accounts.auth2).confirmTransaction(0);
+            await confirm.wait()
+
+            const confirm2 = await Recovery.connect(accounts.auth3).confirmTransaction(0);
+            await confirm2.wait()
+
+            const executeRecover = await Recovery.connect(accounts.auth1).executeTransaction(0);
+            await executeRecover.wait();
+
+            const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
+            const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
+
+            expect(BigInt(trustyBal)).to.equal(BigInt(0));
+            expect(BigInt(recoveryBal)).to.equal(amount);
+
+            //console.log(hre.ethers.utils.hexlify(erc20amount)) //52b7d2dcc80cd2e4000000
+            //console.log(Erc20.address.slice(2,Erc20.address.length))
+
+            // ERC20 Recovery
+            //const erc20recover = await Recovery.submitTransaction(trustyAddr, 0, `0x8980f11f000000000000000000000000${Erc20.address.slice(2,Erc20.address.length)}000000000000000000000000000000000000000000${hre.ethers.utils.hexlify(erc20amount).slice(2)}`, 0);
+            const erc20recover = await Recovery.connect(accounts.auth1).submitTransaction(trustyAddr, 0, `0x9e8c708e000000000000000000000000${Erc20.address.slice(2,Erc20.address.length)}`);
+            await erc20recover.wait()
+
+            const erc20confirm = await Recovery.connect(accounts.auth2).confirmTransaction(1);
+            await erc20confirm.wait()
+
+            const erc20confirm2 = await Recovery.connect(accounts.auth3).confirmTransaction(1);
+            await erc20confirm2.wait()
+
+            const erc20executeRecover = await Recovery.connect(accounts.auth1).executeTransaction(1);
+            await erc20executeRecover.wait();
+            
+            const erc20Trustybal = await Erc20.connect(accounts.owner).balanceOf(trustyAddr)
+            //console.log(`[Erc20Trustybal-postRecover]: ${erc20Trustybal}`)
+
+            const erc20Recoverybal = await Erc20.connect(accounts.owner).balanceOf(Recovery.address)
+            //console.log(`[Erc20Recoverybal-postRecover]: ${erc20Recoverybal}`)
+
+            expect(BigInt(erc20Trustybal)).to.equal(BigInt(0));
+            expect(BigInt(erc20Recoverybal)).to.equal(erc20amount);
+        })
+
+        it("should revert a recover from not recovery address test", async () => {
+            
+            await istantiateAccounts()
+            const owners = [accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployRecovery(authorizers,2, "RECOVERY");
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            
+            await deployTrustyFrozen([...authorizers,...owners],3,"Frozen", Recovery.address,authorizers)
+            const trustyAddr = await Frozen.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+            
+            //const txDeposit = await Factory.connect(accounts.owner).depositContract(0, amount, {value: amount});
+            //await txDeposit.wait();
+            //expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            //const txSend = await Factory.connect(accounts.owner).trustySubmit(0, accounts.anonymous.address, amount, 0x00, 0);
+            //await txSend.wait();
+            const txSend = await Frozen.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 0);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            //const txConfirm = await Factory.connect(accounts.randomAccount).trustyConfirm(0, 0);
+            //await txConfirm.wait();
+            const txConfirm = await Frozen.connect(accounts.fede1).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            //const txConfirm2 = await Factory.connect(accounts.other).trustyConfirm(0, 0);
+            //await txConfirm2.wait();
+            const txConfirm2 = await Frozen.connect(accounts.fede2).confirmTransaction(0)
+            await txConfirm2.wait()
+
+            // Execute a tx after Absolute TimeLock
+            
+            //const txExe = 
+            //await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.reverted;
+            //await expect(Factory.connect(accounts.owner).trustyExecute(0,0)).to.be.revertedWith("Trusty is locked!")
+            //await txExe.wait();                       
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            //const txGet = await Factory.getTx(0,0);
+            const txGet = await Frozen.getTransaction(0);
+
+            expect(txGet[3]).to.equal(false)
+
+            // Executes RECOVERY
+
+            //0xce746024 //0x7c0f1ee7
+            await expect(Recovery.connect(accounts.anonymous).submitTransaction(trustyAddr, 0, "0xce746024")).to.be.reverted;
+            
+
+            const recover = await Recovery.connect(accounts.auth1).submitTransaction(trustyAddr, 0, "0xce746024");
+            await recover.wait()
+
+            const confirm = await Recovery.connect(accounts.auth2).confirmTransaction(0);
+            await confirm.wait()
+
+            const confirm2 = await Recovery.connect(accounts.auth3).confirmTransaction(0);
+            await confirm2.wait()
+
+            //const executeRecover = 
+            //await Recovery.connect(accounts.other).executeTransaction(0)
+
+            const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
+            const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
+
+            expect(BigInt(trustyBal)).to.equal(amount);
+            expect(BigInt(recoveryBal)).to.equal(BigInt(0));
+            
+        })
+    })
+
+    describe("Type Cold relative timelock tests", async () => {
+        it("execute a transaction after relative timelock test", async () => {
+            const TIME_LOCK = 7200
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployRecovery(owners,2, "RECOVERY");
+            await deployTrustyCold(authorizers,2,"Cold", Recovery.address)
+            const trustyAddr = await Cold.address;
+
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Cold.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, TIME_LOCK);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Cold.connect(accounts.auth2).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Cold.connect(accounts.auth3).confirmTransaction(0)
+            await txConfirm2.wait()
+
+            await mine(TIME_LOCK).then(async () => {
+                // Execute a tx from another account of owners
+                const txExecute = await Cold.connect(accounts.auth1).executeTransaction(0)
+                await txExecute.wait()
+            })
+            
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)+BigInt(amount)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Cold.getTransaction(0);
+
+            expect(txGet[3]).to.equal(true)
+        })
+
+        it("should revert a transaction before relative timelock test", async () => {
+            const TIME_LOCK = 7200
+            await istantiateAccounts()
+            const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployRecovery(owners,2, "RECOVERY");
+            await deployTrustyCold(authorizers,2,"Cold", Recovery.address)
+            const trustyAddr = await Cold.address;
+
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Cold.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, TIME_LOCK);
+            await txSend.wait();
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Cold.connect(accounts.auth2).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Cold.connect(accounts.auth3).confirmTransaction(0)
+            await txConfirm2.wait()
+
+            await mine(TIME_LOCK-4).then(async () => {
+                // Execute a tx from another account of owners
+                //await Cold.connect(accounts.auth1).executeTransaction(0)
+                await expect(Cold.connect(accounts.auth1).executeTransaction(0)).to.be.reverted
+                //await expect(Cold.connect(accounts.auth1).executeTransaction(0)).to.be.revertedWith(`"timeLock preventing execution: ", ${TIME_LOCK-4})`)
+            })
+            
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Cold.getTransaction(0);
+
+            expect(txGet[3]).to.equal(false)
+            
+        })
+    })
+
+    describe("Type Frozen relative timelock tests", async () => {
+        it("execute a transaction after relative timelock test", async () => {
+            const TIME_LOCK = 7200
+            await istantiateAccounts()
+            const owners = [accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployRecovery(authorizers,2, "RECOVERY");
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            await deployTrustyFrozen([...authorizers,...owners],3,"Frozen", Recovery.address,authorizers)
+            const trustyAddr = await Frozen.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Frozen.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 7200);
+            await txSend.wait();
+
+            // Authorize a tx from an account of owners
+            const txAuthorize = await Frozen.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorize.wait()
+
+            // Authorize a tx from another account of owners
+            const txAuthorize2 = await Frozen.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorize2.wait() 
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Frozen.connect(accounts.fede1).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Frozen.connect(accounts.fede2).confirmTransaction(0)
+            await txConfirm2.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm3 = await Frozen.connect(accounts.fede3).confirmTransaction(0)
+            await txConfirm3.wait()
+
+            await mine(TIME_LOCK-6).then(async () => {
+                const txExecute = await Frozen.connect(accounts.auth2).executeTransaction(0)
+                await txExecute.wait()
+            })
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)+BigInt(amount)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Frozen.getTransaction(0);
+
+            expect(txGet[3]).to.equal(true)
+        })
+
+        it("should revert a transaction before relative timelock test", async () => {
+            const TIME_LOCK = 7200
+            await istantiateAccounts()
+            const owners = [accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
+            const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
+            await deployRecovery(authorizers,2, "RECOVERY");
+            //console.log("[RECOVERY]",Recovery.address);
+            
+            await deployTrustyFrozen([...authorizers,...owners],3,"Frozen", Recovery.address,authorizers)
+            const trustyAddr = await Frozen.address;
+            
+            const amount = ethers.utils.parseEther("1")
+
+            await accounts.owner.sendTransaction({to: trustyAddr, value: amount});
+            expect(await hre.ethers.provider.getBalance(trustyAddr)).to.equal(amount);
+
+            const preBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            const txSend = await Frozen.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, 0x00, 7200);
+            await txSend.wait();
+
+            // Authorize a tx from an account of owners
+            const txAuthorize = await Frozen.connect(accounts.auth2).authorizeTransaction(0)
+            await txAuthorize.wait()
+
+            // Authorize a tx from another account of owners
+            const txAuthorize2 = await Frozen.connect(accounts.auth3).authorizeTransaction(0)
+            await txAuthorize2.wait() 
+
+            // Confirm a tx from an account of owners
+            const txConfirm = await Frozen.connect(accounts.fede1).confirmTransaction(0)
+            await txConfirm.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm2 = await Frozen.connect(accounts.fede2).confirmTransaction(0)
+            await txConfirm2.wait()
+
+            // Confirm a tx from another account of owners
+            const txConfirm3 = await Frozen.connect(accounts.fede3).confirmTransaction(0)
+            await txConfirm3.wait()
+
+            await mine(TIME_LOCK-7).then(async () => {
+                await expect(Frozen.connect(accounts.auth2).executeTransaction(0)).to.be.reverted
+            })
+
+            const postBalance = await hre.ethers.provider.getBalance(accounts.anonymous.address);
+
+            expect(BigInt(preBalance)).to.equal(BigInt(postBalance))
+
+            // Get Trusty txs status
+            const txGet = await Frozen.getTransaction(0);
+
+            expect(txGet[3]).to.equal(false)
         })
     })
     
@@ -2259,12 +3003,15 @@ describe("Trusty tests", async () => {
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const authorizers = [accounts.auth1.address, accounts.auth2.address, accounts.auth3.address]
+            const recovery = accounts.recovery.address
             
             await deployTrustySingle(owners,1, "Single");
             await deployFactory()
             await deployRecovery(owners,2, "RECOVERY", [...owners], accounts.owner.address);
             await deployTrustySimple(owners,1,"Simple")
-            await deployTrustyAdvanced(owners,1,"Advanced",owners, accounts.owner.address,authorizers)
+            await deployTrustyAdvanced(owners,1,"Advanced",owners, accounts.owner.address, authorizers)
+            await deployTrustyCold(owners,1,"Cold",recovery)
+            await deployTrustyFrozen(owners,1,"Frozen", recovery, authorizers)
             //await deployFactoryAdvanced()
         })
     })

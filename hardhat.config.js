@@ -9,7 +9,9 @@ if(
   process.argv.length === 2 && process.argv[1].includes("scripts/deploy.js") || 
   process.argv[1].includes("scripts/deploySimple.js") || 
   process.argv[1].includes("scripts/deployRecovery.js") ||
-  process.argv[1].includes("scripts/deployAdvanced.js")
+  process.argv[1].includes("scripts/deployAdvanced.js") ||
+  process.argv[1].includes("scripts/deployCold.js") ||
+  process.argv[1].includes("scripts/deployFrozen.js")
   ){
   input = prompt('Would you like to use HW Ledger? [y] or [press any button] to skip: ')==="y"?true:false;
 }

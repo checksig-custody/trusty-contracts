@@ -3,13 +3,13 @@
 pragma solidity ^0.8.25;
 
 /**
- * @title Trusty Recovery Multisignature
+ * @title Trusty Cold Multisignature
  * @author Ramzi Bougammoura
  * @notice This contract is inherithed by Trusty Factory deployer
  * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
-contract Recovery {
+contract TrustyCold {
     string public id;
 
     //Events
@@ -40,6 +40,7 @@ contract Recovery {
         uint numConfirmations;     
         uint blockHeight;
         uint timestamp;
+        uint timeLock;
     }
 
     // mapping from tx index => owner => bool
@@ -47,8 +48,16 @@ contract Recovery {
 
     Transaction[] public transactions;
 
+    // Recovery
+    address public recoveryTrusty;
+
     modifier onlyOwner() {
         require(isOwner[msg.sender], "not owner");
+        _;
+    }
+
+    modifier onlyRecover() {
+        require(msg.sender == recoveryTrusty, "Not allowed!");
         _;
     }
 
@@ -71,7 +80,8 @@ contract Recovery {
     constructor(
         address[] memory _owners, 
         uint _numConfirmationsRequired, 
-        string memory _id
+        string memory _id,
+        address _recoveryTrusty
     ) {
         require(_owners.length > 0, "owners required");
         
@@ -95,6 +105,45 @@ contract Recovery {
         numConfirmationsRequired = _numConfirmationsRequired;
 
         id = _id;
+
+        require(_recoveryTrusty != address(0), "invalid Recovery Trusty address");
+        recoveryTrusty = _recoveryTrusty;
+    }
+
+    /**
+    * @notice Method used by recovery address in Recovery scenario
+    */
+    function recover() public onlyRecover {
+        uint amount = address(this).balance;        
+        (bool success, ) = msg.sender.call{value: amount}("");
+        require(success, "recover failed");
+    }
+
+    /**
+    * @notice Method used by recovery address in ERC20 Recovery scenario
+    */
+    function recoverERC20(address _token) public onlyRecover {
+        (bytes memory _dataApprove,) = encodeRecover(_token);
+        (,bytes memory _dataTransfer) = encodeRecover(_token);
+        (bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
+        require(approveSuccess, "recoverERC20 approve failed");
+        (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
+        require(transferSuccess, "recoverERC20 transfer failed");
+    }
+
+    /**
+    * @notice Method used to encode an ERC20 calldata
+    */
+    function encodeRecover(address _token) private returns(bytes memory, bytes memory) {
+        address _recover = recoveryTrusty;
+        
+        bytes memory balance = abi.encodeWithSignature("balanceOf(address)", address(this));
+        (bool success, bytes memory _amount) = _token.call{value: 0}(balance);
+        require(success, "Unable to get balance of Token");
+
+        bytes memory approve = abi.encodeWithSignature("approve(address,uint256)", _recover, uint256(bytes32(_amount)));
+        bytes memory transfer = abi.encodeWithSignature("transfer(address,uint256)", _recover, uint256(bytes32(_amount)));
+        return (approve,transfer);
     }
 
     /**
@@ -102,9 +151,11 @@ contract Recovery {
     * @param _to Address that will receive the tx or the contract that receive the interaction
     * @param _value Amount of ether to send
     * @param _data Optional data field or calldata to another contract
+    * @param _timeLock Relative timelock set the number of blocks required to execute the transaction
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
-    function submitTransaction(address _to, uint _value, bytes calldata _data) public onlyOwner {
+    function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner {
+        require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
         uint txIndex = transactions.length;
 
         transactions.push(
@@ -115,7 +166,8 @@ contract Recovery {
                 executed: false,
                 numConfirmations: 0,
                 blockHeight: block.number,
-                timestamp: block.timestamp
+                timestamp: block.timestamp,
+                timeLock: _timeLock
             })
         );
 
@@ -164,12 +216,19 @@ contract Recovery {
             "cannot execute tx due to number of confirmation required"
         );
 
+        if (transaction.blockHeight + transaction.timeLock > block.number) {
+            int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
+            revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
+        }
+
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
         );
         require(success, "tx failed");
 
         transaction.executed = true;
+
+        transaction.timestamp = block.timestamp;
         
         emit ExecuteTransaction(msg.sender, _txIndex);
     }    
@@ -205,7 +264,7 @@ contract Recovery {
     * @param _txIndex The index of the transaction that needs to be retrieved
     * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight) {
+    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timestamp) {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
@@ -214,7 +273,8 @@ contract Recovery {
             transaction.data,
             transaction.executed,
             transaction.numConfirmations,
-            transaction.blockHeight
+            transaction.blockHeight,
+            transaction.timestamp
         );
     }
 
