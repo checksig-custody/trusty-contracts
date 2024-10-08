@@ -122,13 +122,13 @@ describe("Trusty tests", async () => {
 
     const deployTrustyCold = async (owners, threshold = 2,id="",recovery) => {    
         const MusigCold = await ethers.getContractFactory("TrustyCold");
-        const musig = await MusigCold.deploy(owners, threshold, id, recovery, { value: 0 });
+        const musig = await MusigCold.deploy(owners, threshold, id, recovery, BLOCKLOCK, { value: 0 });
         Cold = musig
     }
 
     const deployTrustyFrozen = async (owners, threshold = 2,id="", recovery, authorizers) => {    
         const MusigFrozen = await ethers.getContractFactory("TrustyFrozen");
-        const musig = await MusigFrozen.deploy(owners, threshold, id, recovery, authorizers, { value: 0 });
+        const musig = await MusigFrozen.deploy(owners, threshold, id, recovery, BLOCKLOCK, authorizers, { value: 0 });
         Frozen = musig
     }
 
@@ -2375,6 +2375,7 @@ describe("Trusty tests", async () => {
 
     describe("Type Frozen Recovery tests", async () => {
         it("execute an eth recovery test", async () => {
+            const ABSOLUTE_LOCK = 28800;
             await istantiateAccounts()
             const owners = [accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
             const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
@@ -2435,8 +2436,10 @@ describe("Trusty tests", async () => {
             const confirm2 = await Recovery.connect(accounts.auth3).confirmTransaction(0);
             await confirm2.wait()
 
-            const executeRecover = await Recovery.connect(accounts.auth1).executeTransaction(0);
-            await executeRecover.wait();
+            await mine(ABSOLUTE_LOCK + 113).then(async () => {
+                const executeRecover = await Recovery.connect(accounts.auth1).executeTransaction(0);
+                await executeRecover.wait();
+            })
 
             const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
             const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
@@ -2446,6 +2449,7 @@ describe("Trusty tests", async () => {
         })
 
         it("execute an erc20 recovery test", async () => {
+            const ABSOLUTE_LOCK = 28800;
             await istantiateAccounts()
             const owners = [accounts.fede1.address, accounts.fede2.address, accounts.fede3.address, accounts.fede4.address, accounts.fede5.address, accounts.fede6.address];
             const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
@@ -2520,8 +2524,10 @@ describe("Trusty tests", async () => {
             const confirm2 = await Recovery.connect(accounts.auth3).confirmTransaction(0);
             await confirm2.wait()
 
-            const executeRecover = await Recovery.connect(accounts.auth1).executeTransaction(0);
-            await executeRecover.wait();
+            await mine(ABSOLUTE_LOCK + 113).then(async () => {
+                const executeRecover = await Recovery.connect(accounts.auth1).executeTransaction(0);
+                await executeRecover.wait();
+            })
 
             const trustyBal = await hre.ethers.provider.getBalance(trustyAddr)
             const recoveryBal = await hre.ethers.provider.getBalance(Recovery.address)
@@ -2642,7 +2648,7 @@ describe("Trusty tests", async () => {
 
     describe("Type Cold relative timelock tests", async () => {
         it("execute a transaction after relative timelock test", async () => {
-            const TIME_LOCK = 7200
+            const TIME_LOCK = 7200 //+ BLOCKLOCK + 500
             await istantiateAccounts()
             const owners = [accounts.owner.address, accounts.randomAccount.address, accounts.other.address];
             const authorizers = [accounts.auth1.address,accounts.auth2.address,accounts.auth3.address]
@@ -2668,7 +2674,7 @@ describe("Trusty tests", async () => {
             const txConfirm2 = await Cold.connect(accounts.auth3).confirmTransaction(0)
             await txConfirm2.wait()
 
-            await mine(TIME_LOCK).then(async () => {
+            await mine(TIME_LOCK + BLOCKLOCK).then(async () => {
                 // Execute a tx from another account of owners
                 const txExecute = await Cold.connect(accounts.auth1).executeTransaction(0)
                 await txExecute.wait()

@@ -48,6 +48,9 @@ contract TrustyCold {
 
     Transaction[] public transactions;
 
+    // Absolute_timelock
+    uint private blocklock;
+
     // Recovery
     address public recoveryTrusty;
 
@@ -81,7 +84,8 @@ contract TrustyCold {
         address[] memory _owners, 
         uint _numConfirmationsRequired, 
         string memory _id,
-        address _recoveryTrusty
+        address _recoveryTrusty,
+        uint _blocklock
     ) {
         require(_owners.length > 0, "owners required");
         
@@ -108,6 +112,8 @@ contract TrustyCold {
 
         require(_recoveryTrusty != address(0), "invalid Recovery Trusty address");
         recoveryTrusty = _recoveryTrusty;
+
+        blocklock = _blocklock;
     }
 
     /**
@@ -167,7 +173,7 @@ contract TrustyCold {
                 numConfirmations: 0,
                 blockHeight: block.number,
                 timestamp: block.timestamp,
-                timeLock: _timeLock
+                timeLock: _timeLock + blocklock
             })
         );
 

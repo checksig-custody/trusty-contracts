@@ -54,6 +54,11 @@ contract TrustyFrozen {
 
     Transaction[] public transactions;
 
+    // Absolute_timelock
+    uint offset = 120; // Blocks required against an eventual fork
+    uint private blocklock;
+    uint public absolute_timelock;
+
     // Recovery
     address public recoveryTrusty;
 
@@ -92,12 +97,18 @@ contract TrustyFrozen {
         _;
     }
 
+    modifier notUnlocked() {
+        require(block.number >= absolute_timelock,"TrustyFrozen not yet unlocked!");
+        _;
+    }
+
     // Constructor
     constructor(
         address[] memory _owners, 
         uint _numConfirmationsRequired, 
         string memory _id, 
         address _recoveryTrusty,
+        uint _blocklock,
         address[] memory _authorizers
     ) {
         require(_owners.length > 0, "owners required");
@@ -137,12 +148,23 @@ contract TrustyFrozen {
 
         require(_recoveryTrusty != address(0), "invalid Recovery Trusty address");
         recoveryTrusty = _recoveryTrusty;
+
+        blocklock = _blocklock;
+
+        unlock();
+    }
+
+    /**
+    * @notice Method used to update and reset the absolute timelock. Triggered after Transaction execution
+    */
+    function unlock() private {
+        absolute_timelock = block.number + offset + blocklock;
     }
 
     /**
     * @notice Method used by recovery address in Recovery scenario
     */
-    function recover() public onlyRecover {
+    function recover() public onlyRecover notUnlocked {
         uint amount = address(this).balance;        
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "recover failed");
@@ -151,7 +173,7 @@ contract TrustyFrozen {
     /**
     * @notice Method used by recovery address in ERC20 Recovery scenario
     */
-    function recoverERC20(address _token) public onlyRecover {
+    function recoverERC20(address _token) public onlyRecover notUnlocked {
         (bytes memory _dataApprove,) = encodeRecover(_token);
         (,bytes memory _dataTransfer) = encodeRecover(_token);
         (bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
@@ -275,6 +297,8 @@ contract TrustyFrozen {
         transaction.executed = true;
 
         transaction.timestamp = block.timestamp;
+
+        unlock();
         
         emit ExecuteTransaction(msg.sender, _txIndex);
     }    
