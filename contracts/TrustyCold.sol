@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.28;
+
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title Trusty Cold Multisignature
@@ -9,7 +11,7 @@ pragma solidity ^0.8.25;
  * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
-contract TrustyCold {
+contract TrustyCold is ReentrancyGuard {
     string public id;
 
     //Events
@@ -25,7 +27,7 @@ contract TrustyCold {
     event RevokeConfirmation(address indexed owner, uint indexed txIndex);
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
 
-    error TimeLock(string err,int blockLeft);
+    error TimeLock(string err, int blockLeft);
 
     // Variable Slots
     address[] public owners;
@@ -147,13 +149,20 @@ contract TrustyCold {
         (bool success, bytes memory _amount) = _token.call{value: 0}(balance);
         require(success, "Unable to get balance of Token");
 
-        bytes memory approve = abi.encodeWithSignature("approve(address,uint256)", _recover, uint256(bytes32(_amount)));
-        bytes memory transfer = abi.encodeWithSignature("transfer(address,uint256)", _recover, uint256(bytes32(_amount)));
+        bytes memory approve = abi.encodeWithSignature(
+            "approve(address,uint256)", 
+            _recover, 
+            uint256(bytes32(_amount))
+        );
+        bytes memory transfer = abi.encodeWithSignature(
+            "transfer(address,uint256)", 
+            _recover, uint256(bytes32(_amount))
+        );
         return (approve,transfer);
     }
 
     /**
-    * @notice This method is used to submit a transaction proposal that will be seen by the others multisignature's owners
+    * @notice This method is used to submit a tx proposal seen by others owners
     * @param _to Address that will receive the tx or the contract that receive the interaction
     * @param _value Amount of ether to send
     * @param _data Optional data field or calldata to another contract
@@ -161,7 +170,7 @@ contract TrustyCold {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner {
-        require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
+        require(block.number <= block.number + _timeLock, "timeLock must be greater than current block");
         uint txIndex = transactions.length;
 
         transactions.push(
@@ -181,11 +190,17 @@ contract TrustyCold {
     }
 
     /**
-    * @notice Method used to confirm the transaction with index `_txIndex` if it exists, is not executed yet and also not even confirmed from the signer.
+    * @notice Method used to confirm the tx with index `_txIndex` if exists, not executed and not confirmed.
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
+    function confirmTransaction(uint _txIndex) 
+        public 
+        onlyOwner 
+        txExists(_txIndex) 
+        notExecuted(_txIndex) 
+        notConfirmed(_txIndex) 
+    {
         Transaction storage transaction = transactions[_txIndex];
         transaction.numConfirmations += 1;
         isConfirmed[_txIndex][msg.sender] = true;
@@ -194,7 +209,7 @@ contract TrustyCold {
     }
 
     /**
-    * @notice Method used to revoke the confirmation of transaction with index `_txIndex` if it exists and is not executed yet.
+    * @notice Method used to revoke a confirmation of tx with index `_txIndex` if exists and not executed.
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
@@ -214,7 +229,13 @@ contract TrustyCold {
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+    function executeTransaction(uint _txIndex) 
+        public 
+        onlyOwner 
+        txExists(_txIndex) 
+        notExecuted(_txIndex) 
+        nonReentrant() 
+    {
         Transaction storage transaction = transactions[_txIndex];
         
         require(
@@ -227,12 +248,12 @@ contract TrustyCold {
             revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
         }
 
+        transaction.executed = true;
+
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
         );
-        require(success, "tx failed");
-
-        transaction.executed = true;
+        require(success, "tx failed");        
 
         transaction.timestamp = block.timestamp;
         
@@ -268,9 +289,21 @@ contract TrustyCold {
     /**
     * @notice Method used to get the transaction proposal structure
     * @param _txIndex The index of the transaction that needs to be retrieved
-    * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
+    * @custom:return Returns a tx structure as (to, value, data, executed, numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight, uint timestamp) {
+    function getTransaction(uint _txIndex) 
+        public 
+        view 
+        returns(
+            address to, 
+            uint value, 
+            bytes memory data, 
+            bool executed, 
+            uint numConfirmations, 
+            uint blockHeight, 
+            uint timestamp
+        ) 
+    {
         Transaction storage transaction = transactions[_txIndex];
 
         return (

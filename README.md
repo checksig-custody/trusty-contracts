@@ -1,5 +1,24 @@
 # Trusty-Contracts Project
 
+## Description
+
+This fork aims to reproduce the CheckSig's Bitcoin custody protocol on Ethereum ecosystem.
+Each multisignature contract has a flow to propose, confirm and execute a proposed transaction reached the established quorum by privileged owners.
+Funds will be deposited in the Frozen contract and after a quorum of 2+3/9 can be moved in the Cold contract.
+The Cold contract has a waiting window of X blocks from the proposal of a withdrawal transaction to its execution that prevents the moving of funds.
+The Recovery contract is a 2/3 multisignature that can be used to recover funds (Ether and ERC20) from the Frozen and/or Cold if/when the required conditions are met.
+In the Frozen case, the Recovery contract can recover funds only after X blocks from the last executed transaction.
+In the Cold case, the Recovery contract can recover funds always.
+
+Each `owner` of a contract has the privilege to propose, confirm or execute a transaction with required conditions excluding the Frozen that has a custom workflow where thew quorum is reached with 2 authorizations plus 3 confirmations between different roles.
+In the TrustyFrozen case the roles are divided in `authorizers` which can only propose and execute a transaction, and the Federation agents which can only confirm a proposed transaction.
+
+- Recovery
+
+- Frozen
+
+- Cold
+
 ## Setup
 
 - Clone the repository and `cd` into it

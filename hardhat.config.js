@@ -1,15 +1,15 @@
 require("@nomicfoundation/hardhat-toolbox");
 require("@nomicfoundation/hardhat-ledger");
+require("@nomiclabs/hardhat-solhint");
 require("dotenv").config({ path: ".env" });
+
 
 const prompt = require('prompt-sync')();
 
 let input = false
 if(
-  process.argv.length === 2 && process.argv[1].includes("scripts/deploy.js") || 
-  process.argv[1].includes("scripts/deploySimple.js") || 
+  process.argv.length === 2 && 
   process.argv[1].includes("scripts/deployRecovery.js") ||
-  process.argv[1].includes("scripts/deployAdvanced.js") ||
   process.argv[1].includes("scripts/deployCold.js") ||
   process.argv[1].includes("scripts/deployFrozen.js")
   ){
@@ -62,7 +62,7 @@ if(useLedger) {
   module.exports = {
     defaultNetwork: "hardhat",
     solidity: {
-      version:"0.8.25",
+      version:"0.8.28",
       settings: {
         optimizer: {
           enabled: true,
@@ -75,7 +75,7 @@ if(useLedger) {
       //gasPrice: gasPrice,
       //outputFile: "gas-report/gas-report.txt",
       noColors: false,
-      currency: "EUR",
+      currency: "USD",
       coinmarketcap: COINMARKETCAP_API_KEY,
       //gasPriceApi: ETHERSCAN_API_KEY,
       token: "ETH"
@@ -142,7 +142,7 @@ if(useLedger) {
   module.exports = {
     defaultNetwork: "hardhat",
     solidity: {
-      version:"0.8.25",
+      version:"0.8.28",
       settings: {
         optimizer: {
           enabled: true,
@@ -155,7 +155,7 @@ if(useLedger) {
       //gasPrice: gasPrice,
       //outputFile: "gas-report/gas-report.txt",
       noColors: false,
-      currency: "EUR",
+      currency: "USD",
       coinmarketcap: COINMARKETCAP_API_KEY,
       //gasPriceApi: ETHERSCAN_API_KEY,
       token: "ETH"

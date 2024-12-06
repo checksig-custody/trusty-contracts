@@ -6,28 +6,30 @@
   "scripts": {
     "compile": "npx hardhat compile",
     "start": "npx hardhat run scripts/run.js",
-    "deploy": "npx hardhat run scripts/deploy.js --network",
-    "deploy-simple": "npx hardhat run scripts/deploySimple.js --network",
     "deploy-cold": "npx hardhat run scripts/deployCold.js --network",
-    "deploy-advanced": "npx hardhat run scripts/deployAdvanced.js --network",
     "deploy-frozen": "npx hardhat run scripts/deployFrozen.js --network",
     "deploy-recovery": "npx hardhat run scripts/deployRecovery.js --network",
     "verify": "npx hardhat verify --network",
     "test": "hardhat test",
     "test-id": "hardhat test --grep",
     "test-gas": "REPORT_GAS=true npx hardhat test",
-    "test-all": "hardhat test --grep 'Trusty test'"
+    "test-all": "hardhat test --grep 'Trusty test'",
+    "solhint": "npx hardhat check",
+    "coverage": "hardhat coverage"
   },
   "keywords": [],
   "author": "Ramzi Bougammoura",
   "license": "MIT",
   "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
     "@nomicfoundation/hardhat-ledger": "^1.0.2",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
-    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
-    "hardhat": "^2.22.2"
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "ethers": "^6.13.4",
+    "hardhat": "^2.22.17"
   },
   "dependencies": {
+    "@nomiclabs/hardhat-solhint": "^4.0.1",
     "@openzeppelin/contracts": "^4.9.6",
     "dotenv": "^16.0.3",
     "prompt-sync": "^4.2.0"

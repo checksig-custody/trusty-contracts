@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.28;
+
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title Trusty Recovery Multisignature
@@ -9,7 +11,7 @@ pragma solidity ^0.8.25;
  * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
-contract Recovery {
+contract Recovery is ReentrancyGuard {
     string public id;
 
     //Events
@@ -25,7 +27,7 @@ contract Recovery {
     event RevokeConfirmation(address indexed owner, uint indexed txIndex);
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
 
-    error TimeLock(string err,int blockLeft);
+    error TimeLock(string err, int blockLeft);
 
     // Variable Slots
     address[] public owners;
@@ -98,7 +100,7 @@ contract Recovery {
     }
 
     /**
-    * @notice This method is used to submit a transaction proposal that will be seen by the others multisignature's owners
+    * @notice Method used to submit a transaction proposal seen by others owners
     * @param _to Address that will receive the tx or the contract that receive the interaction
     * @param _value Amount of ether to send
     * @param _data Optional data field or calldata to another contract
@@ -123,11 +125,17 @@ contract Recovery {
     }
 
     /**
-    * @notice Method used to confirm the transaction with index `_txIndex` if it exists, is not executed yet and also not even confirmed from the signer.
+    * @notice Method used to confirm the transaction with index `_txIndex` if exists, is not executed and not confirmed.
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
+    function confirmTransaction(uint _txIndex) 
+        public 
+        onlyOwner 
+        txExists(_txIndex) 
+        notExecuted(_txIndex) 
+        notConfirmed(_txIndex) 
+    {
         Transaction storage transaction = transactions[_txIndex];
         transaction.numConfirmations += 1;
         isConfirmed[_txIndex][msg.sender] = true;
@@ -136,7 +144,7 @@ contract Recovery {
     }
 
     /**
-    * @notice Method used to revoke the confirmation of transaction with index `_txIndex` if it exists and is not executed yet.
+    * @notice Method used to revoke a confirmation with index `_txIndex` if exists and not executed.
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
@@ -156,7 +164,13 @@ contract Recovery {
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function executeTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) {
+    function executeTransaction(uint _txIndex) 
+        public 
+        onlyOwner 
+        txExists(_txIndex) 
+        notExecuted(_txIndex) 
+        nonReentrant() 
+    {
         Transaction storage transaction = transactions[_txIndex];
         
         require(
@@ -164,18 +178,18 @@ contract Recovery {
             "cannot execute tx due to number of confirmation required"
         );
 
+        transaction.executed = true;
+
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
         );
-        require(success, "tx failed");
-
-        transaction.executed = true;
+        require(success, "tx failed");        
         
         emit ExecuteTransaction(msg.sender, _txIndex);
     }    
 
     /**
-    * @notice Method used to execute the transaction with index `_txIndex` if it exists and is not executed yet.
+    * @notice Method used to execute the transaction with index `_txIndex` if exists and not executed.
     * It can only be called by the contract's owners
     * @return address[] Returns the Trusty's owners as an array
     */
@@ -203,9 +217,18 @@ contract Recovery {
     /**
     * @notice Method used to get the transaction proposal structure
     * @param _txIndex The index of the transaction that needs to be retrieved
-    * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
+    * @custom:return Returns a tx structure as (to, value, data, executed, numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint blockHeight) {
+    function getTransaction(uint _txIndex) public view 
+        returns(
+            address to, 
+            uint value, 
+            bytes memory data, 
+            bool executed, 
+            uint numConfirmations, 
+            uint blockHeight
+        ) 
+    {
         Transaction storage transaction = transactions[_txIndex];
 
         return (

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.25;
+pragma solidity ^0.8.28;
+
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title Trusty Advanced Multisignature
@@ -9,7 +11,7 @@ pragma solidity ^0.8.25;
  * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
-contract TrustyFrozen {
+contract TrustyFrozen is ReentrancyGuard {
     string public id;
 
     //Events
@@ -26,7 +28,7 @@ contract TrustyFrozen {
     event ExecuteTransaction(address indexed owner, uint indexed txIndex);
     event AuthorizeTransaction(address indexed authorizer, uint indexed txIndex);
 
-    error TimeLock(string err,int blockLeft);
+    error TimeLock(string err, int blockLeft);
 
     // Variable Slots
     address[] public owners;
@@ -192,13 +194,20 @@ contract TrustyFrozen {
         (bool success, bytes memory _amount) = _token.call{value: 0}(balance);
         require(success, "Unable to get balance of Token");
 
-        bytes memory approve = abi.encodeWithSignature("approve(address,uint256)", _recover, uint256(bytes32(_amount)));
-        bytes memory transfer = abi.encodeWithSignature("transfer(address,uint256)", _recover, uint256(bytes32(_amount)));
+        bytes memory approve = abi.encodeWithSignature(
+            "approve(address,uint256)", 
+            _recover, 
+            uint256(bytes32(_amount))
+        );
+        bytes memory transfer = abi.encodeWithSignature(
+            "transfer(address,uint256)", 
+            _recover, uint256(bytes32(_amount))
+        );
         return (approve,transfer);
     }
 
     /**
-    * @notice This method is used to submit a transaction proposal that will be seen by the others multisignature's owners
+    * @notice Method used to submit a tx proposal seen by others owners
     * @param _to Address that will receive the tx or the contract that receive the interaction
     * @param _value Amount of ether to send
     * @param _data Optional data field or calldata to another contract
@@ -206,7 +215,7 @@ contract TrustyFrozen {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyAuthorizer {
-        require(block.number <= block.number + _timeLock, "timeLock must be greater than current blockHeight + timeLock");
+        require(block.number <= block.number + _timeLock, "timeLock must be greater than current block");
         //this.checkData(_data);
 
         uint txIndex = transactions.length;
@@ -229,11 +238,17 @@ contract TrustyFrozen {
     }
 
     /**
-    * @notice Method used to confirm the transaction with index `_txIndex` if it exists, is not executed yet and also not even confirmed from the signer.
+    * @notice Method used to confirm a tx with index `_txIndex` if exists, not executed and not confirmed.
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function confirmTransaction(uint _txIndex) public onlyOwner txExists(_txIndex) notExecuted(_txIndex) notConfirmed(_txIndex) {
+    function confirmTransaction(uint _txIndex) 
+        public 
+        onlyOwner 
+        txExists(_txIndex) 
+        notExecuted(_txIndex) 
+        notConfirmed(_txIndex)
+    {
         require(!isAuthorizer[msg.sender] ,"Authorizer can not confirm");
         Transaction storage transaction = transactions[_txIndex];
         transaction.numConfirmations += 1;
@@ -245,7 +260,13 @@ contract TrustyFrozen {
     /**
      * @notice Method used to add an authorization to a transaction
      */
-    function authorizeTransaction(uint _txIndex) public onlyAuthorizer txExists(_txIndex) notExecuted(_txIndex) notAuthorized(_txIndex) {
+    function authorizeTransaction(uint _txIndex) 
+        public 
+        onlyAuthorizer 
+        txExists(_txIndex) 
+        notExecuted(_txIndex) 
+        notAuthorized(_txIndex)
+    {
         Transaction storage transaction = transactions[_txIndex];
         transaction.numAuthorizations += 1;
         isAuthorized[_txIndex][msg.sender] = true;
@@ -254,7 +275,7 @@ contract TrustyFrozen {
     }
 
     /**
-    * @notice Method used to revoke the confirmation of transaction with index `_txIndex` if it exists and is not executed yet.
+    * @notice Method used to revoke a confirmation of tx with index `_txIndex` if exists and not executed.
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
@@ -274,7 +295,13 @@ contract TrustyFrozen {
     * It can only be called by the contract's owners
     * @param _txIndex The index of the transaction that needs to be signed and confirmed
     */
-    function executeTransaction(uint _txIndex) public onlyAuthorizer txExists(_txIndex) notExecuted(_txIndex) {
+    function executeTransaction(uint _txIndex) 
+        public 
+        onlyAuthorizer 
+        txExists(_txIndex) 
+        notExecuted(_txIndex) 
+        nonReentrant() 
+    {
         Transaction storage transaction = transactions[_txIndex];
         
         require(
@@ -282,19 +309,19 @@ contract TrustyFrozen {
             "cannot execute tx due to number of confirmation required"
         );
 
-        require(transaction.numAuthorizations >= numAuthorizationsRequired, "cannot execute tx due to number of authorization required");
+        require(transaction.numAuthorizations >= numAuthorizationsRequired, "insufficient authorization required");
 
         if (transaction.blockHeight + transaction.timeLock > block.number) {
             int blk = int(transaction.blockHeight + transaction.timeLock - block.number);
             revert TimeLock({err: "timeLock preventing execution: ",blockLeft: blk});
         }
 
+        transaction.executed = true;
+
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
         );
-        require(success, "tx failed");
-
-        transaction.executed = true;
+        require(success, "tx failed");        
 
         transaction.timestamp = block.timestamp;
 
@@ -332,9 +359,23 @@ contract TrustyFrozen {
     /**
     * @notice Method used to get the transaction proposal structure
     * @param _txIndex The index of the transaction that needs to be retrieved
-    * @custom:return Returns a Transaction structure as (address to, uint value, bytes data, bool executed, uint numConfirmations)
+    * @custom:return Returns a Transaction structure as (to, value, data, executed, numConfirmations)
     */
-    function getTransaction(uint _txIndex) public view returns(address to, uint value, bytes memory data, bool executed, uint numConfirmations, uint numAuthorizations, uint blockHeight, uint timestamp, uint timeLock) {
+    function getTransaction(uint _txIndex) 
+        public 
+        view 
+        returns(
+            address to, 
+            uint value, 
+            bytes memory data, 
+            bool executed, 
+            uint numConfirmations, 
+            uint numAuthorizations, 
+            uint blockHeight, 
+            uint timestamp, 
+            uint timeLock
+        ) 
+    {
         Transaction storage transaction = transactions[_txIndex];
 
         return (
