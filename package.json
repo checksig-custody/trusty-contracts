@@ -5,7 +5,6 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
-    "start": "npx hardhat run scripts/run.js",
     "deploy-cold": "npx hardhat run scripts/deployCold.js --network",
     "deploy-frozen": "npx hardhat run scripts/deployFrozen.js --network",
     "deploy-recovery": "npx hardhat run scripts/deployRecovery.js --network",

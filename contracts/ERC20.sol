@@ -28,6 +28,7 @@ pragma solidity >=0.7.0 <0.9.0;
     }
 
     function transfer(address to, uint value) public returns(bool) {
+        require(value > 0, "Can not transfer negative value");
         require(balanceOf(msg.sender) >= value, 'Balance too low');
         balances[to] += value;
         balances[msg.sender] -= value;

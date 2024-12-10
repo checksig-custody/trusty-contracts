@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /**
  * @title Trusty Advanced Multisignature
  * @author Ramzi Bougammoura
- * @notice This contract is inherithed by Trusty Factory deployer
- * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
 contract TrustyFrozen is ReentrancyGuard {
@@ -148,7 +146,7 @@ contract TrustyFrozen is ReentrancyGuard {
 
         id = _id;
 
-        require(_recoveryTrusty != address(0), "invalid Recovery Trusty address");
+        require(_recoveryTrusty != address(0), "invalid Recovery address");
         recoveryTrusty = _recoveryTrusty;
 
         blocklock = _blocklock;
@@ -167,7 +165,8 @@ contract TrustyFrozen is ReentrancyGuard {
     * @notice Method used by recovery address in Recovery scenario
     */
     function recover() public onlyRecover notUnlocked {
-        uint amount = address(this).balance;        
+        uint amount = address(this).balance;
+        require(amount > 0, "no amount");
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "recover failed");
     }
@@ -176,10 +175,10 @@ contract TrustyFrozen is ReentrancyGuard {
     * @notice Method used by recovery address in ERC20 Recovery scenario
     */
     function recoverERC20(address _token) public onlyRecover notUnlocked {
-        (bytes memory _dataApprove,) = encodeRecover(_token);
+        //(bytes memory _dataApprove,) = encodeRecover(_token);
         (,bytes memory _dataTransfer) = encodeRecover(_token);
-        (bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
-        require(approveSuccess, "recoverERC20 approve failed");
+        //(bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
+        //require(approveSuccess, "recoverERC20 approve failed");
         (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
         require(transferSuccess, "recoverERC20 transfer failed");
     }
@@ -215,9 +214,7 @@ contract TrustyFrozen is ReentrancyGuard {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyAuthorizer {
-        require(block.number <= block.number + _timeLock, "timeLock must be greater than current block");
-        //this.checkData(_data);
-
+        //require(block.number <= block.number + _timeLock, "timelock must be greater than current block");
         uint txIndex = transactions.length;
 
         transactions.push(
@@ -309,7 +306,7 @@ contract TrustyFrozen is ReentrancyGuard {
             "cannot execute tx due to number of confirmation required"
         );
 
-        require(transaction.numAuthorizations >= numAuthorizationsRequired, "insufficient authorization required");
+        require(transaction.numAuthorizations >= numAuthorizationsRequired, "authorization required");
 
         if (transaction.blockHeight + transaction.timeLock > block.number) {
             int blk = int(transaction.blockHeight + transaction.timeLock - block.number);

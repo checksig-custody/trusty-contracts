@@ -34,21 +34,6 @@ let Frozen = null;
 
 const BLOCKLOCK = 28800;
 
-/**
- * [Trusty Multisignature Contract]: 
- * interface,provider,signer,callStatic,estimateGas,functions,populateTransaction,filters,
- * _runningEvents,_wrappedEmits,address,resolvedAddress,_price(),contractAction(uint256,uint256),
- * contractReadBalance(uint256),contractReadOwners(uint256),contractReadTxs(uint256),
- * contracts(uint256),createContract(address[],uint256),depositContract(uint256,uint256),
- * getTx(uint256,uint256),imOwner(uint256),owner(),renounceOwnership(),totalTrusty(),
- * transferOwnership(address),trustyConfirm(uint256,uint256),trustyExecute(uint256,uint256),
- * trustyOwner(uint256,uint256),trustyPriceConfig(uint256),trustyRevoke(uint256,uint256),
- * trustySubmit(uint256,address,uint256,bytes),withdraw(),_price,contractAction,contractReadBalance,
- * contractReadOwners,contractReadTxs,contracts,createContract,depositContract,getTx,imOwner,owner,
- * renounceOwnership,totalTrusty,transferOwnership,trustyConfirm,trustyExecute,trustyOwner,trustyPriceConfig,
- * trustyRevoke,trustySubmit,withdraw,deployTransaction
- */
-
 describe("Trusty tests", async () => {
     // Create various accounts signers for testing purpose
     const istantiateAccounts = async () => {
@@ -307,10 +292,6 @@ describe("Trusty tests", async () => {
             const trustyBalance = await Cold.getBalance()
 
             expect(coldBalance).to.be.equal(trustyBalance)
-        })
-
-        it("Frozen test", async () => {
-
         })
     })
 

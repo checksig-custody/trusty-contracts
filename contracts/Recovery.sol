@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /**
  * @title Trusty Recovery Multisignature
  * @author Ramzi Bougammoura
- * @notice This contract is inherithed by Trusty Factory deployer
- * @dev All function calls are meant to be called from the Factory, but the contract can also be deployed alone
  * Copyright (c) 2024 Ramzi Bougammoura
  */
 contract Recovery is ReentrancyGuard {
