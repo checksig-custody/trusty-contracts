@@ -21,13 +21,13 @@ async function main() {
   
   for (var i = 0; i < nOwners; i++){
     const owner = prompt(`Address of the ${i}th owner: `);
-    if(!ethers.utils.isAddress(owner)){throw "You must enter a valid string address"}
+    if(!ethers.isAddress(owner)){throw "You must enter a valid string address"}
     owners.push(owner);
   }
 
   for (var i = 0; i < nAuthorizers; i++){
     const authorizer = prompt(`Address of the ${i}th authorizer: `);
-    if(!ethers.utils.isAddress(authorizer)){throw "You must enter a valid string address"}
+    if(!ethers.isAddress(authorizer)){throw "You must enter a valid string address"}
     authorizers.push(authorizer);
   }
 
@@ -46,7 +46,7 @@ async function main() {
   */
 
   const recovery = prompt(`Insert the RECOVERY address: `)
-  if(!ethers.utils.isAddress(recovery)){throw "You must enter a valid string address"}
+  if(!ethers.isAddress(recovery)){throw "You must enter a valid string address"}
 
   const blocklock = parseInt(prompt('How many blocks until RECOVERY mode enabled? '));
   if(isNaN(blocklock)) {throw `You must use a valid number: ${parseInt(blocklock)}`}

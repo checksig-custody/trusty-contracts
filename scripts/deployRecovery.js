@@ -17,7 +17,7 @@ async function main() {
   
   for (var i = 0; i < nOwners; i++){
     const owner = prompt(`Address of the ${i}th owner: `);
-    if(!ethers.utils.isAddress(owner)){throw "You must enter a valid string address"}
+    if(!ethers.isAddress(owner)){throw "You must enter a valid string address"}
     owners.push(owner);
   }
 
