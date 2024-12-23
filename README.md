@@ -1,17 +1,17 @@
-# Trusty-Contracts Project
+# CheckSig Custody - Trusty Multi-Signature Smart Contracts
 
 ## Description
 
-This fork aims to reproduce the CheckSig's Bitcoin custody protocol on Ethereum ecosystem.
-Each multisignature contract has a flow to propose, confirm and execute a proposed transaction reached the established quorum by privileged owners.
-Funds will be deposited in the Frozen contract and after a quorum of 2+3/9 can be moved in the Cold contract.
-The Cold contract has a waiting window of X blocks from the proposal of a withdrawal transaction to its execution that prevents the moving of funds.
-The Recovery contract is a 2/3 multisignature that can be used to recover funds (Ether and ERC20) from the Frozen and/or Cold if/when the required conditions are met.
-In the Frozen case, the Recovery contract can recover funds only after X blocks from the last executed transaction.
-In the Cold case, the Recovery contract can recover funds always.
+This fork aims to reproduce the CheckSig's Bitcoin custody's protocol on Ethereum ecosystem.
+Each multisignature contract has a flow to propose, confirm, revoke and execute a proposed transaction when the established quorum is reached by the `owners`.
+Funds will be deposited in the `Frozen` contract; after a quorum of minimum X authorizations of `authorizers` plus X/X confirmations of `owners` that are not authorizers the funds can be moved in the proposed transaction's `to` address (this will be mostly the Cold contract address).
+The `Cold` contract has a waiting window of X blocks from the proposal of a withdrawal transaction to its execution that prevents the moving of the funds.
+The `Recovery` contract is a X/X multisignature that can be used to recover funds (Ether and ERC20) either from the Frozen and/or Cold if/when the required conditions are met.
+In the Frozen contract case, the Recovery contract can recover funds only after X blocks from the last executed transaction.
+In the Cold contract case, the Recovery contract can always recover the funds.
 
-Each `owner` of a contract has the privilege to propose, confirm or execute a transaction with required conditions excluding the Frozen that has a custom workflow where thew quorum is reached with 2 authorizations plus 3 confirmations between different roles.
-In the TrustyFrozen case the roles are divided in `authorizers` which can only propose and execute a transaction, and the Federation agents which can only confirm a proposed transaction.
+Each `owner` of a contract has the privilege to propose, confirm, revoke or execute a transaction when required conditions are met excluding the Frozen that has a custom workflow where the quorum is reached with minimum X authorizations from `authorizers` plus X confirmations of `owners` that are not authorizers.
+In the Frozen case the roles are divided in `authorizers` which can only propose, authorize and execute a transaction, and the `owners` without authorizer role which can only confirm or revoke confirmation of a proposed transaction.
 
 - Recovery
 

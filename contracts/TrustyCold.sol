@@ -131,7 +131,8 @@ contract TrustyCold is ReentrancyGuard {
     */
     function recoverERC20(address _token) public onlyRecover {
         //(bytes memory _dataApprove,) = encodeRecover(_token);
-        (,bytes memory _dataTransfer) = encodeRecover(_token);
+        //(,bytes memory _dataTransfer) = encodeRecover(_token);
+        bytes memory _dataTransfer = encodeRecover(_token);
         //(bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
         //require(approveSuccess, "recoverERC20 approve failed");
         (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
@@ -141,23 +142,25 @@ contract TrustyCold is ReentrancyGuard {
     /**
     * @notice Method used to encode an ERC20 calldata
     */
-    function encodeRecover(address _token) private returns(bytes memory, bytes memory) {
+    function encodeRecover(address _token) private returns(bytes memory) {
         address _recover = recoveryTrusty;
         
         bytes memory balance = abi.encodeWithSignature("balanceOf(address)", address(this));
         (bool success, bytes memory _amount) = _token.call{value: 0}(balance);
         require(success, "Unable to get balance of Token");
-
+        /*
         bytes memory approve = abi.encodeWithSignature(
             "approve(address,uint256)", 
             _recover, 
             uint256(bytes32(_amount))
         );
+        */
         bytes memory transfer = abi.encodeWithSignature(
             "transfer(address,uint256)", 
             _recover, uint256(bytes32(_amount))
         );
-        return (approve,transfer);
+        //return (approve,transfer);
+        return transfer;
     }
 
     /**

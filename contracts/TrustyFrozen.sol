@@ -27,7 +27,7 @@ contract TrustyFrozen is ReentrancyGuard {
     event AuthorizeTransaction(address indexed authorizer, uint indexed txIndex);
 
     error TimeLock(string err, int blockLeft);
-    error Err(string err);
+    //error Err(string err);
 
     // Variable Slots
     address[] public owners;
@@ -115,6 +115,9 @@ contract TrustyFrozen is ReentrancyGuard {
     ) {
         require(_owners.length > 0, "owners required");
         require(_authorizers.length > 0, "authorizers required");
+
+        //require(_owners.length >= _numConfirmationsRequired, "invalid number of owners");
+        //require(_authorizers.length >= numAuthorizationsRequired, "invalid number of authorizers");
         
         require(
             _numConfirmationsRequired > 0 &&
@@ -177,7 +180,8 @@ contract TrustyFrozen is ReentrancyGuard {
     */
     function recoverERC20(address _token) public onlyRecover notUnlocked {
         //(bytes memory _dataApprove,) = encodeRecover(_token);
-        (,bytes memory _dataTransfer) = encodeRecover(_token);
+        //(,bytes memory _dataTransfer) = encodeRecover(_token);
+        bytes memory _dataTransfer = encodeRecover(_token);
         //(bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
         //require(approveSuccess, "recoverERC20 approve failed");
         (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
@@ -187,23 +191,26 @@ contract TrustyFrozen is ReentrancyGuard {
     /**
     * @notice Method used to encode an ERC20 calldata
     */
-    function encodeRecover(address _token) private returns(bytes memory, bytes memory) {
+    function encodeRecover(address _token) private returns(bytes memory) {
         address _recover = recoveryTrusty;
         
         bytes memory balance = abi.encodeWithSignature("balanceOf(address)", address(this));
         (bool success, bytes memory _amount) = _token.call{value: 0}(balance);
         require(success, "Unable to get balance of Token");
 
+        /*
         bytes memory approve = abi.encodeWithSignature(
             "approve(address,uint256)", 
             _recover, 
             uint256(bytes32(_amount))
         );
+        */
         bytes memory transfer = abi.encodeWithSignature(
             "transfer(address,uint256)", 
             _recover, uint256(bytes32(_amount))
         );
-        return (approve,transfer);
+        //return (approve,transfer);
+        return transfer;
     }
 
     /**
