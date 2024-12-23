@@ -27,6 +27,7 @@ contract TrustyFrozen is ReentrancyGuard {
     event AuthorizeTransaction(address indexed authorizer, uint indexed txIndex);
 
     error TimeLock(string err, int blockLeft);
+    error Err(string err);
 
     // Variable Slots
     address[] public owners;
@@ -34,7 +35,7 @@ contract TrustyFrozen is ReentrancyGuard {
     address[] public authorizers;
     mapping(address => bool) public isAuthorizer;
     uint public numConfirmationsRequired;
-    uint public numAuthorizationsRequired;
+    uint public numAuthorizationsRequired = 2;
 
     struct Transaction {
         address to;
@@ -53,6 +54,7 @@ contract TrustyFrozen is ReentrancyGuard {
     mapping(uint => mapping(address => bool)) public isAuthorized;
 
     Transaction[] public transactions;
+    //mapping(uint => Transaction) public transactions;
 
     // Absolute_timelock
     uint offset = 120; // Blocks required against an eventual fork
@@ -142,7 +144,6 @@ contract TrustyFrozen is ReentrancyGuard {
         }
         
         numConfirmationsRequired = _numConfirmationsRequired;
-        numAuthorizationsRequired = 2;
 
         id = _id;
 
@@ -315,17 +316,17 @@ contract TrustyFrozen is ReentrancyGuard {
 
         transaction.executed = true;
 
+        transaction.timestamp = block.timestamp;
+
+        unlock();        
+
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
         );
         require(success, "tx failed");        
-
-        transaction.timestamp = block.timestamp;
-
-        unlock();
         
         emit ExecuteTransaction(msg.sender, _txIndex);
-    }    
+    }
 
     /**
     * @notice Method used to execute the transaction with index `_txIndex` if it exists and is not executed yet.

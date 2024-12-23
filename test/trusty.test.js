@@ -343,7 +343,7 @@ describe("Trusty multisig tests", async () => {
         })
 
         describe("Frozen tests", async () => {
-            it("TrustyFrozen.sol test", async () => {
+            it("TrustyFrozen test", async () => {
                 // Instantiate accounts and deploy Trusties contracts
                 await loadFixture(deployment2)
     
@@ -398,7 +398,12 @@ describe("Trusty multisig tests", async () => {
 
                 // FROZEN Transaction proposal
                 await Frozen.connect(accounts.auth1).submitTransaction(frozenAddr, amount, Buffer.from(""), 7200)
-                //await expect(await Frozen.connect(accounts.auth1).submitTransaction(frozenAddr, amount, Buffer.from(""), 7200)).to.be.revertedWith("timeLock must be greater than current block")
+
+                // Should revert a proposal from not authorizer
+                await expect(Frozen.connect(accounts.anonymous).submitTransaction(frozenAddr, amount, Buffer.from(""), 0)).to.be.revertedWith("not an authorizer")
+
+                // Should revert confirmation from not owner
+                await expect(Frozen.connect(accounts.anonymous).confirmTransaction(0)).to.be.revertedWith("not owner")
 
                 // Authorize a tx from an account of Authorizers owners account
                 let txAuthorize = await Frozen.connect(accounts.auth1).authorizeTransaction(0)
@@ -425,6 +430,9 @@ describe("Trusty multisig tests", async () => {
 
                 // Should fail revocation of undefined tx
                 await expect(Frozen.connect(accounts.fede1).revokeConfirmation(1)).to.be.revertedWith("tx does not exist")
+
+                // Should fail revocation of not owner
+                await expect(Frozen.connect(accounts.anonymous).revokeConfirmation(1)).to.be.revertedWith("not owner")
                 
                 txConfirm = await Frozen.connect(accounts.fede3).confirmTransaction(0)
                 await txConfirm.wait()
@@ -452,12 +460,24 @@ describe("Trusty multisig tests", async () => {
                 await mine(TIME_LOCK - 6).then(async () => {
                     // EXECUTE a Transaction proposal after TIME LOCK but without FUNDS
                     await expect(Frozen.connect(accounts.auth2).executeTransaction(0)).to.be.revertedWith("tx failed")
+
+                    // Should fail execution from not owner
+                    await expect(Frozen.connect(accounts.fede1).executeTransaction(0)).to.be.revertedWith("not an authorizer")
                     
                     await accounts.owner.sendTransaction({to: frozenAddr, value: amount})
                     
                     let txExecute = await Frozen.connect(accounts.auth2).executeTransaction(0)
                     await expect(txExecute.wait()).to.emit(Frozen,"ExecuteTransaction")
                 })
+
+                // Should fail revocation of already executed tx
+                await expect(Frozen.connect(accounts.fede1).revokeConfirmation(0)).to.be.revertedWith("tx already executed")
+
+                // Should fail confirmation already executed tx
+                await expect(Frozen.connect(accounts.fede3).confirmTransaction(0)).to.be.revertedWith("tx already executed")
+
+                // Should fail already authorized tx
+                await expect(Frozen.connect(accounts.auth1).authorizeTransaction(0)).to.be.revertedWith("tx already executed")
 
                 // Should fail already executed tx
                 await expect(Frozen.connect(accounts.auth1).executeTransaction(0)).to.be.revertedWith("tx already executed")
@@ -506,6 +526,9 @@ describe("Trusty multisig tests", async () => {
                 let confirm2 = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
                 await confirm2.wait()
 
+                // Should fail recover by not Recovery address
+                await expect(Frozen.connect(accounts.owner).recover()).to.be.revertedWith("Not allowed!")
+
                 // Should fail confirmation of undefined tx
                 await expect(Recovery.connect(accounts.owner).confirmTransaction(2)).to.be.revertedWith("tx does not exist")
 
@@ -531,6 +554,9 @@ describe("Trusty multisig tests", async () => {
                 // ERC20 Recovery
                 const erc20recover = await Recovery.connect(accounts.owner).submitTransaction(frozenAddr, 0, `0x9e8c708e000000000000000000000000${erc20Addr.slice(2,erc20Addr.length)}`);
                 await erc20recover.wait()
+
+                // Should fail recover by not Recovery address
+                await expect(Frozen.connect(accounts.owner).recoverERC20(erc20Addr)).to.be.revertedWith("Not allowed!")
 
                 confirm = await Recovery.connect(accounts.owner).confirmTransaction(1);
                 await confirm.wait()
@@ -598,6 +624,9 @@ describe("Trusty multisig tests", async () => {
 
                 // COLD Transaction proposal
                 await Cold.connect(accounts.auth1).submitTransaction(accounts.anonymous.address, amount, Buffer.from(""), 0)
+
+                // Should revert a proposal from not authorizer
+                await expect(Cold.connect(accounts.anonymous).submitTransaction(coldAddr, amount, Buffer.from(""), 0)).to.be.revertedWith("not owner")
                 
                 // Confirm a tx from another account of owners
                 let txConfirm = await Cold.connect(accounts.auth1).confirmTransaction(0)
@@ -650,6 +679,12 @@ describe("Trusty multisig tests", async () => {
                     await expect(txExecute.wait()).to.emit(Cold,"ExecuteTransaction")
                 })
 
+                // Should fail confirmation of already executed tx
+                await expect(Cold.connect(accounts.auth1).confirmTransaction(0)).to.be.revertedWith("tx already executed")
+
+                // Should fail revokation of already executed tx
+                await expect(Cold.connect(accounts.auth1).revokeConfirmation(0)).to.be.revertedWith("tx already executed")
+
                 // Shoul fail an already executed tx
                 await expect(Cold.connect(accounts.auth1).executeTransaction(0)).to.be.revertedWith("tx already executed")
                 
@@ -688,6 +723,9 @@ describe("Trusty multisig tests", async () => {
 
                 expect(await Recovery.getTransactionCount()).to.be.eq(1)
 
+                // Should fail recover by not recovery address
+                await expect(Cold.connect(accounts.owner).recover()).to.be.revertedWith("Not allowed!")
+
                 let confirm = await Recovery.connect(accounts.owner).confirmTransaction(0);
                 await confirm.wait()
 
@@ -721,6 +759,9 @@ describe("Trusty multisig tests", async () => {
                 confirm2 = await Recovery.connect(accounts.randomAccount).confirmTransaction(1);
                 await confirm2.wait()
 
+                // Should fail recover by not recovery address
+                await expect(Cold.connect(accounts.owner).recoverERC20(erc20Addr)).to.be.revertedWith("Not allowed!")
+
                 // Should revert confirmation of undefined tx
                 await expect(Recovery.connect(accounts.owner).confirmTransaction(3)).to.be.revertedWith("tx does not exist")
 
@@ -742,7 +783,7 @@ describe("Trusty multisig tests", async () => {
         })
         
         describe("Recovery tests", async () => {
-            it("Recovery.sol coverage test", async () => {
+            it("Recovery coverage test", async () => {
                 await loadFixture(deployment)
     
                 const erc20addr = await Erc20.getAddress()
@@ -761,12 +802,12 @@ describe("Trusty multisig tests", async () => {
                 const coldAddr = await Cold.getAddress()
 
                 const amount = ethers.parseEther("1")
-                //await accounts.owner.sendTransaction({to: coldAddr, value: amount})
+                await accounts.owner.sendTransaction({to: coldAddr, value: amount})
 
                 const erc20amount = ethers.parseEther("100000000")
 
-                //const erc20transfer = await Erc20.connect(accounts.owner).transfer(coldAddr, erc20amount)
-                //await erc20transfer.wait()
+                const erc20transfer = await Erc20.connect(accounts.owner).transfer(coldAddr, erc20amount)
+                await erc20transfer.wait()
 
                 const recoverEth = await Recovery.connect(accounts.owner).submitTransaction(coldAddr, 0, "0xce746024");
                 await recoverEth.wait()
@@ -788,6 +829,9 @@ describe("Trusty multisig tests", async () => {
                 let confirm3 = await Recovery.connect(accounts.other).confirmTransaction(0);
                 await confirm3.wait()
 
+                // Should revert confirmation from not owner
+                await expect(Recovery.connect(accounts.anonymous).confirmTransaction(0)).to.be.revertedWith("not owner")
+
                 // Should revert an already confirmed tx
                 await expect(Recovery.connect(accounts.randomAccount).confirmTransaction(0)).to.be.revertedWith("tx already confirmed")
 
@@ -800,8 +844,17 @@ describe("Trusty multisig tests", async () => {
                 // Should revert an execution of undefined tx
                 await expect(Recovery.connect(accounts.owner).executeTransaction(1)).to.be.revertedWith("tx does not exist")
                 
+                // Should fail revokation of not confirmed tx
+                await expect(Recovery.connect(accounts.owner).revokeConfirmation(0)).to.be.revertedWith("tx not confirmed")
+
                 // Should fail without balance
-                await expect(Recovery.connect(accounts.owner).executeTransaction(0)).to.be.revertedWith("tx failed")
+                //await expect(Recovery.connect(accounts.owner).executeTransaction(0)).to.be.revertedWith("tx failed")
+
+                let execute = await Recovery.connect(accounts.other).executeTransaction(0);
+                await execute.wait()
+
+                // Should fail revokation of already executed tx
+                await expect(Recovery.connect(accounts.owner).revokeConfirmation(0)).to.be.revertedWith("tx already executed")
 
                 // ERC20 Recovery
                 const erc20recover = await Recovery.connect(accounts.owner).submitTransaction(recoveryAddr, 0, `0x9e8c708e000000000000000000000000${erc20Addr.slice(2,erc20Addr.length)}`);
@@ -814,7 +867,13 @@ describe("Trusty multisig tests", async () => {
                 await confirm2.wait()
 
                 // Should fail an already executed tx
-                await expect(Recovery.connect(accounts.owner).executeTransaction(0)).to.be.revertedWith("tx failed")
+                await expect(Recovery.connect(accounts.owner).executeTransaction(0)).to.be.revertedWith("tx already executed")
+
+                // Should fail confirmation of an already executed tx
+                await expect(Recovery.connect(accounts.owner).confirmTransaction(0)).to.be.revertedWith("tx already executed")
+
+                // Should fail revokation from not owner
+                await expect(Recovery.connect(accounts.anonymous).revokeConfirmation(0)).to.be.revertedWith("not owner")
 
                 // Get Trusty TXs State
                 const txGet = await Recovery.getTransaction(1);
