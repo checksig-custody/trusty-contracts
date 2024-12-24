@@ -2,22 +2,27 @@
 
 ## Description
 
+- Frozen
+
+- Cold
+
+- Recovery
+
 This fork aims to reproduce the CheckSig's Bitcoin custody's protocol on Ethereum ecosystem.
 Each multisignature contract has a flow to propose, confirm, revoke and execute a proposed transaction when the established quorum is reached by the `owners`.
+
 Funds will be deposited in the `Frozen` contract; after a quorum of minimum X authorizations of `authorizers` plus X/X confirmations of `owners` that are not authorizers the funds can be moved in the proposed transaction's `to` address (this will be mostly the Cold contract address).
+
 The `Cold` contract has a waiting window of X blocks from the proposal of a withdrawal transaction to its execution that prevents the moving of the funds.
+
 The `Recovery` contract is a X/X multisignature that can be used to recover funds (Ether and ERC20) either from the Frozen and/or Cold if/when the required conditions are met.
+
 In the Frozen contract case, the Recovery contract can recover funds only after X blocks from the last executed transaction.
 In the Cold contract case, the Recovery contract can always recover the funds.
 
 Each `owner` of a contract has the privilege to propose, confirm, revoke or execute a transaction when required conditions are met excluding the Frozen that has a custom workflow where the quorum is reached with minimum X authorizations from `authorizers` plus X confirmations of `owners` that are not authorizers.
+
 In the Frozen case the roles are divided in `authorizers` which can only propose, authorize and execute a transaction, and the `owners` without authorizer role which can only confirm or revoke confirmation of a proposed transaction.
-
-- Recovery
-
-- Frozen
-
-- Cold
 
 ## Setup
 

@@ -27,7 +27,6 @@ contract TrustyFrozen is ReentrancyGuard {
     event AuthorizeTransaction(address indexed authorizer, uint indexed txIndex);
 
     error TimeLock(string err, int blockLeft);
-    //error Err(string err);
 
     // Variable Slots
     address[] public owners;
@@ -70,12 +69,12 @@ contract TrustyFrozen is ReentrancyGuard {
     }
 
     modifier onlyOwner() {
-        require(isOwner[msg.sender], "not owner"); //
+        require(isOwner[msg.sender], "not owner");
         _;
     }
 
     modifier onlyAuthorizer() {
-        require(isAuthorizer[msg.sender], "not an authorizer"); //
+        require(isAuthorizer[msg.sender], "not an authorizer");
         _;
     }
 
@@ -179,11 +178,7 @@ contract TrustyFrozen is ReentrancyGuard {
     * @notice Method used by recovery address in ERC20 Recovery scenario
     */
     function recoverERC20(address _token) public onlyRecover notUnlocked {
-        //(bytes memory _dataApprove,) = encodeRecover(_token);
-        //(,bytes memory _dataTransfer) = encodeRecover(_token);
         bytes memory _dataTransfer = encodeRecover(_token);
-        //(bool approveSuccess, ) = _token.call{value: 0}(_dataApprove);
-        //require(approveSuccess, "recoverERC20 approve failed");
         (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
         require(transferSuccess, "recoverERC20 transfer failed");
     }
@@ -195,21 +190,16 @@ contract TrustyFrozen is ReentrancyGuard {
         address _recover = recoveryTrusty;
         
         bytes memory balance = abi.encodeWithSignature("balanceOf(address)", address(this));
+
         (bool success, bytes memory _amount) = _token.call{value: 0}(balance);
+
         require(success, "Unable to get balance of Token");
 
-        /*
-        bytes memory approve = abi.encodeWithSignature(
-            "approve(address,uint256)", 
-            _recover, 
-            uint256(bytes32(_amount))
-        );
-        */
         bytes memory transfer = abi.encodeWithSignature(
             "transfer(address,uint256)", 
             _recover, uint256(bytes32(_amount))
         );
-        //return (approve,transfer);
+
         return transfer;
     }
 
@@ -222,7 +212,6 @@ contract TrustyFrozen is ReentrancyGuard {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyAuthorizer {
-        //require(block.number <= block.number + _timeLock, "timelock must be greater than current block");
         uint txIndex = transactions.length;
 
         transactions.push(
