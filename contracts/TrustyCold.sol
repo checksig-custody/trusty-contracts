@@ -41,12 +41,17 @@ contract TrustyCold is ReentrancyGuard {
         uint blockHeight;
         uint timestamp;
         uint timeLock;
+        bool exists;
+        uint index;
     }
+
+    uint txIndex = 0;
 
     // mapping from tx index => owner => bool
     mapping(uint => mapping(address => bool)) public isConfirmed;
 
-    Transaction[] public transactions;
+    //Transaction[] public transactions;
+    mapping(uint => Transaction) public transactions;
 
     // Absolute_timelock
     uint private blocklock;
@@ -65,7 +70,8 @@ contract TrustyCold is ReentrancyGuard {
     }
 
     modifier txExists(uint _txIndex) {
-        require(_txIndex < transactions.length, "tx does not exist");
+        //require(_txIndex < transactions.length, "tx does not exist");
+        require(transactions[_txIndex].exists, "tx does not exist");
         _;
     }
 
@@ -164,9 +170,9 @@ contract TrustyCold is ReentrancyGuard {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyOwner {
-        uint txIndex = transactions.length;
+        //uint txIndex = transactions.length;
 
-        transactions.push(
+        transactions[txIndex] =
             Transaction({
                 to: _to,
                 value: _value,
@@ -175,11 +181,15 @@ contract TrustyCold is ReentrancyGuard {
                 numConfirmations: 0,
                 blockHeight: block.number,
                 timestamp: block.timestamp,
-                timeLock: _timeLock + blocklock
+                timeLock: _timeLock + blocklock,
+                exists: true,
+                index: txIndex
             })
-        );
+        ;
 
         emit SubmitTransaction(msg.sender, txIndex, _to, _value, _data);
+
+        txIndex++;
     }
 
     /**
@@ -276,7 +286,8 @@ contract TrustyCold is ReentrancyGuard {
     * @return uint Returns the Trusty's total transactions as uint
     */
     function getTransactionCount() public view returns (uint) {
-        return transactions.length;
+        //return transactions.length;
+        return txIndex;
     }
 
     /**
@@ -294,7 +305,9 @@ contract TrustyCold is ReentrancyGuard {
             bool executed, 
             uint numConfirmations, 
             uint blockHeight, 
-            uint timestamp
+            uint timestamp,
+            bool exists,
+            uint index
         ) 
     {
         Transaction storage transaction = transactions[_txIndex];
@@ -306,7 +319,9 @@ contract TrustyCold is ReentrancyGuard {
             transaction.executed,
             transaction.numConfirmations,
             transaction.blockHeight,
-            transaction.timestamp
+            transaction.timestamp,
+            transaction.exists,
+            transaction.index
         );
     }
 

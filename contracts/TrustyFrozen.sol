@@ -46,14 +46,18 @@ contract TrustyFrozen is ReentrancyGuard {
         uint blockHeight;
         uint timestamp;
         uint timeLock;
+        bool exists;
+        uint index;
     }
+
+    uint public txIndex = 0;
 
     // mapping from tx index => owner => bool
     mapping(uint => mapping(address => bool)) public isConfirmed;
     mapping(uint => mapping(address => bool)) public isAuthorized;
 
-    Transaction[] public transactions;
-    //mapping(uint => Transaction) public transactions;
+    //Transaction[] public transactions;
+    mapping(uint => Transaction) public transactions;
 
     // Absolute_timelock
     uint offset = 120; // Blocks required against an eventual fork
@@ -79,7 +83,8 @@ contract TrustyFrozen is ReentrancyGuard {
     }
 
     modifier txExists(uint _txIndex) {
-        require(_txIndex < transactions.length, "tx does not exist");
+        //require(_txIndex < transactions.length, "tx does not exist");
+        require(transactions[_txIndex].exists, "tx does not exist");
         _;
     }
 
@@ -212,9 +217,9 @@ contract TrustyFrozen is ReentrancyGuard {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data, uint _timeLock) public onlyAuthorizer {
-        uint txIndex = transactions.length;
+        //uint txIndex = transactions.length;
 
-        transactions.push(
+        transactions[txIndex] =
             Transaction({
                 to: _to,
                 value: _value,
@@ -224,11 +229,15 @@ contract TrustyFrozen is ReentrancyGuard {
                 numAuthorizations: 0,
                 blockHeight: block.number,
                 timestamp: block.timestamp,
-                timeLock: _timeLock
+                timeLock: _timeLock,
+                exists: true,
+                index: txIndex
             })
-        );
+        ;
 
         emit SubmitTransaction(msg.sender, txIndex, _to, _value, _data);
+
+        txIndex++;
     }
 
     /**
@@ -347,7 +356,8 @@ contract TrustyFrozen is ReentrancyGuard {
     * @return uint Returns the Trusty's total transactions as uint
     */
     function getTransactionCount() public view returns (uint) {
-        return transactions.length;
+        //return transactions.length;
+        return txIndex;
     }
 
     /**
@@ -367,7 +377,9 @@ contract TrustyFrozen is ReentrancyGuard {
             uint numAuthorizations, 
             uint blockHeight, 
             uint timestamp, 
-            uint timeLock
+            uint timeLock,
+            bool exists,
+            uint index
         ) 
     {
         Transaction storage transaction = transactions[_txIndex];
@@ -381,7 +393,9 @@ contract TrustyFrozen is ReentrancyGuard {
             transaction.numAuthorizations,
             transaction.blockHeight,
             transaction.timestamp,
-            transaction.timeLock
+            transaction.timeLock,
+            transaction.exists,
+            transaction.index
         );
     }
 
