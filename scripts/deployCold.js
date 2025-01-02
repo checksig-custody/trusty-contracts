@@ -42,10 +42,10 @@ async function main() {
 
   // here we deploy the contract
   const deployedTrustyContract = await trustyContract.deploy(owners, confirmations, name, recovery, blocklock);
-  await deployedTrustyContract.deployed();
+  await deployedTrustyContract.waitForDeployment();
 
   // print the address of the deployed contract
-  console.log("TrustyCold Contract Address:", deployedTrustyContract.address);
+  console.log("TrustyCold Contract Address:", await deployedTrustyContract.getAddress());
 }
 
 // Call the main function and catch if there is any error
