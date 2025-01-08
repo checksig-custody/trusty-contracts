@@ -236,6 +236,7 @@ contract Recovery is ReentrancyGuard {
             bool executed, 
             uint numConfirmations, 
             uint blockHeight,
+            uint timestamp,
             bool exists,
             uint index
         ) 
@@ -249,6 +250,7 @@ contract Recovery is ReentrancyGuard {
             transaction.executed,
             transaction.numConfirmations,
             transaction.blockHeight,
+            transaction.timestamp,
             transaction.exists,
             transaction.index
         );
