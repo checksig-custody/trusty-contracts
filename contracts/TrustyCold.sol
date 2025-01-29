@@ -54,7 +54,7 @@ contract TrustyCold is ReentrancyGuard {
     mapping(uint => Transaction) public transactions;
 
     // Absolute_timelock
-    uint private blocklock;
+    uint public blocklock;
 
     // Recovery
     address public recoveryTrusty;
@@ -306,6 +306,7 @@ contract TrustyCold is ReentrancyGuard {
             uint numConfirmations, 
             uint blockHeight, 
             uint timestamp,
+            uint timeLock,
             bool exists,
             uint index
         ) 
@@ -320,6 +321,7 @@ contract TrustyCold is ReentrancyGuard {
             transaction.numConfirmations,
             transaction.blockHeight,
             transaction.timestamp,
+            transaction.timeLock,
             transaction.exists,
             transaction.index
         );

@@ -61,7 +61,7 @@ contract TrustyFrozen is ReentrancyGuard {
 
     // Absolute_timelock
     uint offset = 120; // Blocks required against an eventual fork
-    uint private blocklock;
+    uint public blocklock;
     uint public absolute_timelock;
 
     // Recovery
