@@ -4,6 +4,7 @@ const { ethers } = require("hardhat");
 //const { ethers } = require("ethers")
 const { mine } = require("@nomicfoundation/hardhat-network-helpers");
 const { loadFixture} = require("@nomicfoundation/hardhat-toolbox/network-helpers");
+const { decodeCalldata } = require('../utils/calldata.js')
 
 const accounts = {
     owner: "",
@@ -72,21 +73,21 @@ describe("Trusty multisig tests", async () => {
     }
     
     // Recovery
-    const deployRecovery = async (owners, threshold = 2,id="") => {    
+    const deployRecovery = async (owners, threshold = 2,id="") => {
         const MusigRecovery = await ethers.getContractFactory("Recovery");
         const musigRecovery = await MusigRecovery.deploy(owners, threshold, id, { value: 0 });
         Recovery = musigRecovery
     }    
 
     // Cold
-    const deployTrustyCold = async (owners, threshold = 2,id="",recovery) => {    
+    const deployTrustyCold = async (owners, threshold = 2,id="",recovery) => {
         const MusigCold = await ethers.getContractFactory("TrustyCold");
         const musig = await MusigCold.deploy(owners, threshold, id, recovery, BLOCKLOCK, { value: 0 });
         Cold = musig
     }
 
     // Frozen
-    const deployTrustyFrozen = async (owners, threshold = 2,id="", recovery, authorizers) => {    
+    const deployTrustyFrozen = async (owners, threshold = 2,id="", recovery, authorizers) => {
         const MusigFrozen = await ethers.getContractFactory("TrustyFrozen");
         const musig = await MusigFrozen.deploy(owners, threshold, id, recovery, BLOCKLOCK, authorizers, { value: 0 });
         Frozen = musig
@@ -890,6 +891,27 @@ describe("Trusty multisig tests", async () => {
                 await expect(deployRecovery(authorizers,4,"Recovery")).to.be.revertedWith("invalid number of required confirmations")
                 await expect(deployRecovery(invalidAuthorizers,3,"Recovery")).to.be.revertedWith("invalid owner")
                 await expect(deployRecovery(duplicatedAuthorizers,3,"Recovery")).to.be.revertedWith("owner not unique")
+            })
+        })
+
+        describe("Utils tests", async () => {
+            it("calldata test", async () => {
+                const test = "0x30"
+                const approve = "0x095ea7b3000000000000000000000000dfc860f2c68eb0c245a7485c1c0c6e7e9a759b580000000000000000000000000000000000000000000000000de0b6b3a7640000"
+                const transfer = "0xa9059cbb000000000000000000000000dfc860f2c68eb0c245a7485c1c0c6e7e9a759b580000000000000000000000000000000000000000000000000de0b6b3a7640000"
+                const por = "0x5c470ecb"
+                const recover = "0xce746024"
+                const recoverErc20 = "0x9e8c708e0000000000000000000000001c7d4b196cb0c7b01d743fbc6116a902379c7238"                
+                const recoverErc20Other = "0x9e8c708e000000000000000000000000779877a7b0d9e8603169ddbd7836e478b4624789"
+
+                decodeCalldata(test)
+                decodeCalldata(approve)
+                decodeCalldata(transfer)
+                decodeCalldata(por)
+                decodeCalldata(recover)
+                decodeCalldata(recoverErc20)
+                decodeCalldata(recoverErc20Other)
+                decodeCalldata("Testing a normal string... 0123456789@!#€₿✅")
             })
         })
     })
