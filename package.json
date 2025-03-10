@@ -10,6 +10,7 @@
     "deploy-recovery": "npx hardhat run scripts/deployRecovery.js --network",
     "verify": "npx hardhat verify --network",
     "test": "hardhat test",
+    "test-trace": "hardhat test --v",
     "test-id": "hardhat test --grep",
     "test-gas": "REPORT_GAS=true npx hardhat test",
     "test-all": "hardhat test --grep 'Trusty test'",
@@ -32,6 +33,7 @@
     "@nomiclabs/hardhat-solhint": "^4.0.1",
     "@openzeppelin/contracts": "^4.9.6",
     "dotenv": "^16.0.3",
+    "hardhat-tracer": "^3.1.0",
     "prompt-sync": "^4.2.0"
   }
 }

@@ -508,7 +508,7 @@ describe("Trusty multisig tests", async () => {
                 const frozenAddr = await Frozen.getAddress()
 
                 const amount = ethers.parseEther("1")
-                await accounts.owner.sendTransaction({to: frozenAddr, value: amount})
+                //await accounts.owner.sendTransaction({to: frozenAddr, value: amount})
 
                 const erc20amount = ethers.parseEther("100000000")
 
@@ -526,6 +526,22 @@ describe("Trusty multisig tests", async () => {
 
                 let confirm2 = await Recovery.connect(accounts.randomAccount).confirmTransaction(0);
                 await confirm2.wait()
+
+                // ERC20 Recovery
+                const erc20recover = await Recovery.connect(accounts.owner).submitTransaction(frozenAddr, 0, `0x9e8c708e000000000000000000000000${erc20Addr.slice(2,erc20Addr.length)}`);
+                await erc20recover.wait()
+
+                // Should fail recover by not Recovery address
+                await expect(Frozen.connect(accounts.owner).recoverERC20(erc20Addr)).to.be.revertedWith("Not allowed!")
+
+                confirm = await Recovery.connect(accounts.owner).confirmTransaction(1);
+                await confirm.wait()
+
+                confirm2 = await Recovery.connect(accounts.randomAccount).confirmTransaction(1);
+                await confirm2.wait()
+
+                // Should fail ERC20 Recovery if not unlocked
+                await expect(Recovery.connect(accounts.owner).executeTransaction(1)).to.be.revertedWith("tx failed") // with full trace enabled error is: TrustyFrozen not yet unlocked!
 
                 // Should fail recover by not Recovery address
                 await expect(Frozen.connect(accounts.owner).recover()).to.be.revertedWith("Not allowed!")
@@ -546,24 +562,15 @@ describe("Trusty multisig tests", async () => {
                 await expect(Recovery.connect(accounts.owner).executeTransaction(0)).to.be.revertedWith("tx failed")
 
                 await mine(BLOCKLOCK + 113).then(async () => {
+                    // Should fail if no amount to be recovered
+                    await expect(Recovery.connect(accounts.owner).executeTransaction(0)).to.be.revertedWith("tx failed")
+                    await accounts.owner.sendTransaction({to: frozenAddr, value: amount})
+
                     const executeRecoverEth = await Recovery.connect(accounts.owner).executeTransaction(0);
                     await executeRecoverEth.wait();
                     expect(await Frozen.getBalance()).to.be.eq(0n)
                     expect(await Recovery.getBalance()).to.be.eq(1000000000000000000n)
                 })
-
-                // ERC20 Recovery
-                const erc20recover = await Recovery.connect(accounts.owner).submitTransaction(frozenAddr, 0, `0x9e8c708e000000000000000000000000${erc20Addr.slice(2,erc20Addr.length)}`);
-                await erc20recover.wait()
-
-                // Should fail recover by not Recovery address
-                await expect(Frozen.connect(accounts.owner).recoverERC20(erc20Addr)).to.be.revertedWith("Not allowed!")
-
-                confirm = await Recovery.connect(accounts.owner).confirmTransaction(1);
-                await confirm.wait()
-
-                confirm2 = await Recovery.connect(accounts.randomAccount).confirmTransaction(1);
-                await confirm2.wait()
 
                 await mine(BLOCKLOCK + 113).then(async () => {
                     // Should revert an already executed tx
@@ -803,7 +810,7 @@ describe("Trusty multisig tests", async () => {
                 const coldAddr = await Cold.getAddress()
 
                 const amount = ethers.parseEther("1")
-                await accounts.owner.sendTransaction({to: coldAddr, value: amount})
+                //await accounts.owner.sendTransaction({to: coldAddr, value: amount})
 
                 const erc20amount = ethers.parseEther("100000000")
 
@@ -829,6 +836,11 @@ describe("Trusty multisig tests", async () => {
 
                 let confirm3 = await Recovery.connect(accounts.other).confirmTransaction(0);
                 await confirm3.wait()
+
+                // Should revert if no amount to be recovered
+                await expect(Recovery.connect(accounts.owner).executeTransaction(0)).to.be.revertedWith("tx failed") // with full trace enabled error is: no amount!
+
+                await accounts.owner.sendTransaction({to: coldAddr, value: amount})
 
                 // Should revert confirmation from not owner
                 await expect(Recovery.connect(accounts.anonymous).confirmTransaction(0)).to.be.revertedWith("not owner")
@@ -897,8 +909,8 @@ describe("Trusty multisig tests", async () => {
         describe("Utils tests", async () => {
             it("calldata test", async () => {
                 const test = "0x30"
-                const approve = "0x095ea7b3000000000000000000000000dfc860f2c68eb0c245a7485c1c0c6e7e9a759b580000000000000000000000000000000000000000000000000de0b6b3a7640000"
-                const transfer = "0xa9059cbb000000000000000000000000dfc860f2c68eb0c245a7485c1c0c6e7e9a759b580000000000000000000000000000000000000000000000000de0b6b3a7640000"
+                const approve = "0x095ea7b3000000000000000000000000277F0FE830e78055b2765Fa99Bfa52af4482E1510000000000000000000000000000000000000000000000000de0b6b3a7640000"
+                const transfer = "0xa9059cbb000000000000000000000000277F0FE830e78055b2765Fa99Bfa52af4482E1510000000000000000000000000000000000000000000000000de0b6b3a7640000"
                 const por = "0x5c470ecb"
                 const recover = "0xce746024"
                 const recoverErc20 = "0x9e8c708e0000000000000000000000001c7d4b196cb0c7b01d743fbc6116a902379c7238"                

@@ -3,6 +3,7 @@ require("@nomicfoundation/hardhat-ledger");
 require("@nomiclabs/hardhat-solhint");
 require("dotenv").config({ path: ".env" });
 
+require("hardhat-tracer");
 
 const prompt = require('prompt-sync')();
 
@@ -77,7 +78,7 @@ if(useLedger) {
       noColors: false,
       currency: "USD",
       coinmarketcap: COINMARKETCAP_API_KEY,
-      //gasPriceApi: ETHERSCAN_API_KEY,
+      //gasPriceApi: ETHERSCAN_API_KEY, // Comment out for price 
       token: "ETH"
     },
     etherscan: {
@@ -157,7 +158,7 @@ if(useLedger) {
       noColors: false,
       currency: "USD",
       coinmarketcap: COINMARKETCAP_API_KEY,
-      //gasPriceApi: ETHERSCAN_API_KEY,
+      //gasPriceApi: ETHERSCAN_API_KEY, // Comment out for price
       token: "ETH"
     },
     etherscan: {
