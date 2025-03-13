@@ -87,9 +87,9 @@ describe("Trusty multisig tests", async () => {
     }
 
     // Frozen
-    const deployTrustyFrozen = async (owners, threshold = 2,id="", recovery, authorizers) => {
+    const deployTrustyFrozen = async (owners, threshold = 2,id="", recovery, authorizers, absoluteTimelock = BLOCKLOCK) => {
         const MusigFrozen = await ethers.getContractFactory("TrustyFrozen");
-        const musig = await MusigFrozen.deploy(owners, threshold, id, recovery, BLOCKLOCK, authorizers, { value: 0 });
+        const musig = await MusigFrozen.deploy(owners, threshold, id, recovery, absoluteTimelock, authorizers, { value: 0 });
         Frozen = musig
     }
 
@@ -369,9 +369,10 @@ describe("Trusty multisig tests", async () => {
 
                 const recoveryAddr = accounts.anonymous.address
 
-                //await expect(deployTrustyFrozen([...authorizers, ...federations],3,"Frozen", recoveryAddr, authorizers))
+                await deployTrustyFrozen([...authorizers, ...federations],3,"Frozen", recoveryAddr, authorizers, 0)
                 await expect(deployTrustyFrozen([],3,"Frozen", recoveryAddr, authorizers)).to.be.revertedWith("owners required")
                 await expect(deployTrustyFrozen([...authorizers, ...federations],3,"Frozen", recoveryAddr, [])).to.be.revertedWith("authorizers required")
+                await expect(deployTrustyFrozen([...authorizers, ...federations],3,"Frozen", recoveryAddr, [accounts.auth1.address])).to.be.revertedWith("invalid number of authorizers")
                 await expect(deployTrustyFrozen([...authorizers, ...federations],0,"Frozen", recoveryAddr, authorizers)).to.be.revertedWith("invalid number of required confirmations")
                 await expect(deployTrustyFrozen([...authorizers, ...federations],10,"Frozen", recoveryAddr, authorizers)).to.be.revertedWith("invalid number of required confirmations")
                 await expect(deployTrustyFrozen([...invalidAuthorizers, ...federations],3,"Frozen", recoveryAddr, authorizers)).to.be.revertedWith("invalid owner")
@@ -928,4 +929,3 @@ describe("Trusty multisig tests", async () => {
         })
     })
 });
-

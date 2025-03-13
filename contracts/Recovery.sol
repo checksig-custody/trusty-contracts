@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 contract Recovery is ReentrancyGuard {
     string public id;
 
-    //Events
+    // Events
     event Deposit(address indexed sender, uint amount, uint balance);
     event SubmitTransaction(
         address indexed owner,
@@ -27,9 +27,9 @@ contract Recovery is ReentrancyGuard {
 
     error TimeLock(string err, int blockLeft);
 
-    // Variable Slots
+    // State variables
     address[] public owners;
-    mapping(address => bool) public isOwner;
+    mapping(address is_owner => bool) public isOwner;
     uint public numConfirmationsRequired;
 
     struct Transaction {
@@ -46,11 +46,11 @@ contract Recovery is ReentrancyGuard {
 
     uint public txIndex = 0;
 
-    // mapping from tx index => owner => bool
-    mapping(uint => mapping(address => bool)) public isConfirmed;
+    // mapping tx index => owner => bool
+    mapping(uint tx_index => mapping(address => bool)) public isConfirmed;
 
-    //Transaction[] public transactions;
-    mapping(uint => Transaction) public transactions;
+    // mapping uint => Transaction
+    mapping(uint tx_index => Transaction) public transactions;
 
     modifier onlyOwner() {
         require(isOwner[msg.sender], "not owner");
@@ -58,7 +58,6 @@ contract Recovery is ReentrancyGuard {
     }
 
     modifier txExists(uint _txIndex) {
-        //require(_txIndex < transactions.length, "tx does not exist");
         require(transactions[_txIndex].exists, "tx does not exist");
         _;
     }
@@ -111,7 +110,6 @@ contract Recovery is ReentrancyGuard {
     * @dev _data can be used as "bytes memory" or "bytes calldata"
     */
     function submitTransaction(address _to, uint _value, bytes calldata _data) public onlyOwner {
-        //uint txIndex = transactions.length;
 
         transactions[txIndex] =
             Transaction({
@@ -219,7 +217,6 @@ contract Recovery is ReentrancyGuard {
     * @return uint Returns the Trusty's total transactions as uint
     */
     function getTransactionCount() public view returns (uint) {
-        //return transactions.length;
         return txIndex;
     }
 

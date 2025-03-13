@@ -17,10 +17,11 @@ The `Cold` contract has a waiting window of X blocks from the proposal of a with
 
 The `Recovery` contract is a X/X multisignature that can be used to recover funds (Ether and ERC20) either from the Frozen and/or Cold if/when the required conditions are met.
 
-In the Frozen contract case, the Recovery contract can recover funds only after X blocks from the last executed transaction.
+In the Frozen contract case, the Recovery contract can recover funds only after X blocks from the last executed transaction, acting as a dead man switch lock in case no transaction will be executed for a long time.
 In the Cold contract case, the Recovery contract can always recover the funds.
 
-Each `owner` of a contract has the privilege to propose, confirm, revoke or execute a transaction when required conditions are met excluding the Frozen that has a custom workflow where the quorum is reached with minimum X authorizations from `authorizers` plus X confirmations of `owners` that are not authorizers.
+Each `owner` and `authorizer` of a contract is immutable and unique and will be set at deploy time.
+The `owner` has the privilege to propose, confirm, revoke or execute a transaction when required conditions are met excluding the Frozen case that has a custom workflow where the quorum is reached with minimum X authorizations from `authorizers` plus X confirmations of `owners` that are not authorizers.
 
 In the Frozen case the roles are divided in `authorizers` which can only propose, authorize and execute a transaction, and the `owners` without authorizer role which can only confirm or revoke confirmation of a proposed transaction.
 
@@ -95,6 +96,13 @@ npm run test-all
 
 # Run a specific test-id
 npm run test-id -- 'Create trusty test'
+```
+
+## Contract coverage
+
+```shell
+# Run tests with coverage of code branches and statements
+npm run coverage
 ```
 
 ## Basic HardHat usage
