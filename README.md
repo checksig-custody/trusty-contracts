@@ -8,6 +8,8 @@
 
 - Recovery
 
+![custody flow](https://github.com/checksig-custody/trusty-contracts/blob/main/doc/custody_flow.png)
+
 This fork aims to reproduce the CheckSig's Bitcoin custody's protocol on Ethereum ecosystem.
 Each multisignature contract has a flow to propose, confirm, revoke and execute a proposed transaction when the established quorum is reached by the `owners`.
 
