@@ -27,6 +27,8 @@ The `owner` has the privilege to propose, confirm, revoke or execute a transacti
 
 In the Frozen case the roles are divided in `authorizers` which can only propose, authorize and execute a transaction, and the `owners` without authorizer role which can only confirm or revoke confirmation of a proposed transaction.
 
+[Detailed documentation](https://github.com/checksig-custody/trusty-contracts/blob/main/doc/custody_flow.md)
+
 ## Setup
 
 - Clone the repository and `cd` into it
