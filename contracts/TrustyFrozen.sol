@@ -168,6 +168,13 @@ contract TrustyFrozen is ReentrancyGuard {
     }
 
     /**
+    * @notice external method used to update and reset the absolute timelock. Triggered by Recovery
+    */
+    function recoveryUnlock() external onlyRecover notUnlocked {
+        absolute_timelock = block.number + offset + blocklock;
+    }
+
+    /**
     * @notice Method used by recovery address in Recovery scenario
     */
     function recover() public onlyRecover notUnlocked {
@@ -175,7 +182,6 @@ contract TrustyFrozen is ReentrancyGuard {
         require(amount > 0, "no amount");
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "recover failed");
-        unlock();
     }
 
     /**
@@ -185,7 +191,6 @@ contract TrustyFrozen is ReentrancyGuard {
         bytes memory _dataTransfer = encodeRecover(_token);
         (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
         require(transferSuccess, "recoverERC20 transfer failed");
-        unlock();
     }
 
     /**
