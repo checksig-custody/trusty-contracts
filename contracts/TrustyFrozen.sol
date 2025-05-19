@@ -175,6 +175,7 @@ contract TrustyFrozen is ReentrancyGuard {
         require(amount > 0, "no amount");
         (bool success, ) = msg.sender.call{value: amount}("");
         require(success, "recover failed");
+        unlock();
     }
 
     /**
@@ -184,6 +185,7 @@ contract TrustyFrozen is ReentrancyGuard {
         bytes memory _dataTransfer = encodeRecover(_token);
         (bool transferSuccess, ) = _token.call{value: 0}(_dataTransfer);
         require(transferSuccess, "recoverERC20 transfer failed");
+        unlock();
     }
 
     /**

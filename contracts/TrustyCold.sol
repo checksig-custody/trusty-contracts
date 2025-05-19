@@ -45,7 +45,7 @@ contract TrustyCold is ReentrancyGuard {
         uint index;
     }
 
-    uint txIndex = 0;
+    uint public txIndex = 0;
 
     // mapping tx index => owner => bool
     mapping(uint tx_index => mapping(address => bool)) public isConfirmed;
@@ -251,12 +251,12 @@ contract TrustyCold is ReentrancyGuard {
 
         transaction.executed = true;
 
+        transaction.timestamp = block.timestamp;
+
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
         );
-        require(success, "tx failed");        
-
-        transaction.timestamp = block.timestamp;
+        require(success, "tx failed");
         
         emit ExecuteTransaction(msg.sender, _txIndex);
     }    
