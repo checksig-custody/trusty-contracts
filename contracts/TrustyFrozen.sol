@@ -168,13 +168,6 @@ contract TrustyFrozen is ReentrancyGuard {
     }
 
     /**
-    * @notice external method used to update and reset the absolute timelock. Triggered by Recovery
-    */
-    function recoveryUnlock() external onlyRecover notUnlocked {
-        absolute_timelock = block.number + offset + blocklock;
-    }
-
-    /**
     * @notice Method used by recovery address in Recovery scenario
     */
     function recover() public onlyRecover notUnlocked {
@@ -327,7 +320,7 @@ contract TrustyFrozen is ReentrancyGuard {
 
         transaction.timestamp = block.timestamp;
 
-        unlock();        
+        unlock();
 
         (bool success, ) = transaction.to.call{value: transaction.value}(
             transaction.data
