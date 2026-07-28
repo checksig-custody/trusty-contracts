@@ -21,12 +21,12 @@
   "author": "Ramzi Bougammoura",
   "license": "MIT",
   "devDependencies": {
-    "@nomicfoundation/hardhat-ethers": "^3.0.8",
-    "@nomicfoundation/hardhat-ledger": "^1.0.2",
-    "@nomicfoundation/hardhat-network-helpers": "^1.0.10",
-    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@nomicfoundation/hardhat-ethers": "^4.0.0",
+    "@nomicfoundation/hardhat-ledger": "^3.0.0",
+    "@nomicfoundation/hardhat-network-helpers": "^3.0.0",
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
     "ethers": "^6.13.4",
-    "hardhat": "^2.22.17",
+    "hardhat": "^3.0.0",
     "keccak": "^3.0.4"
   },
   "dependencies": {
@@ -35,5 +35,8 @@
     "dotenv": "^16.0.3",
     "hardhat-tracer": "^3.1.0",
     "prompt-sync": "^4.2.0"
+  },
+  "overrides": {
+    "undici@<7.24.1": "7.24.1"
   }
 }
